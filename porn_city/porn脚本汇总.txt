@@ -5,3 +5,17 @@ https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/
 2.Torn 简中汉化脚本
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/torn_cn.js
+
+3.iTravel 飞花助手
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/iTravel.js
+
+4.普照助手
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/giveaway_helper.js
+
+5.飞花未装满提醒
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/Torn_Travel_Check.js
+
+
