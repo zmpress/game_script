@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn 简中汉化脚本
 // @namespace    https://www.g8hh.com.cn/
-// @version      0.0.50
+// @version      0.0.49
 // @description  Torn (https://www.torn.com/) 的简体中文汉化脚本。Simplified Chinese i18n script for web game xxxxx.
 // @author       好阳光的小锅巴 & 麦子
 // @copyright    锅巴汉化
@@ -11,8 +11,8 @@
 // @include      *https://www.torn.com/*
 // @grant        none
 // @website      https://www.gityx.com
-// @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/Torn%E7%AE%80%E4%B8%AD%E6%B1%89%E5%8C%96%E8%84%9A%E6%9C%AC
-// @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/Torn%E7%AE%80%E4%B8%AD%E6%B1%89%E5%8C%96%E8%84%9A%E6%9C%AC
+// @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/torn_cn.js
+// @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/torn_cn.js
 // ==/UserScript==
 /**
  * ---------------------------
@@ -279,7 +279,7 @@ var cnItems = {
     "Lists": "列表",
     "Loan Shark": "高利贷",
     "Log": "日志",
-    "Money": "现金1",
+    "Money": "现金",
     "Marital status": "婚姻状况",
     "Manual labor": "体力劳动",
     "Murder": "谋杀",
