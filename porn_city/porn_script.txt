@@ -56,3 +56,8 @@ https://update.greasyfork.org/scripts/476788/Torn%20Crimes%20Rewards%20Value.use
 功能：将RW结束后获得的奖励结算为市场价值
 
 https://update.greasyfork.org/scripts/473564/%E6%98%BE%E7%A4%BARW%E5%A5%96%E5%8A%B1%E4%BB%B7%E5%80%BC.user.js
+
+15.水木家族RW状态监控
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/shuimu_rw_monitor.js
+
