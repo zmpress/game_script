@@ -2,15 +2,21 @@
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/bingwa.js
 
-2.Torn 简中汉化脚本
+2.Torn 简中汉化脚本(优先选第二个)
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/torn_cn.js
 
-3.iTravel 飞花助手
+https://g8hh.com.cn/zh/tampermonkey/torn-chs.user.js
+
+3.iStock(股票详情)
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/iStock.js
+
+4.iTravel 飞花助手
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/iTravel.js
 
-4.普照助手
+5.普照助手
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/giveaway_helper.js
 
@@ -18,4 +24,35 @@ https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/Torn_Travel_Check.js
 
+7.移除开包动画
 
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/Remove_Package_Open_Animation.js
+
+8.赛车助手
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/saichezhushou.js
+
+9.777加速
+https://update.greasyfork.org/scripts/475467/Torn%20Fast%20Slots.user.js
+
+10.市场2.0改价插件
+
+https://update.greasyfork.org/scripts/513920/Torn%20Market%20Filler.user.js
+
+11.一键下架
+
+https://update.greasyfork.org/scripts/515870/Torn%20Market%20Quick%20Remove.user.js
+
+12.旧巴扎搜索插件
+
+https://update.greasyfork.org/scripts/515735/Bazaar%20Item%20Search%20powered%20by%20IronNerd.user.js
+
+13.Torn Crimes奖励价值显示
+功能：crime成功后获得的物品显示市场价（需设置public api）（pda暂时无效）
+
+https://update.greasyfork.org/scripts/476788/Torn%20Crimes%20Rewards%20Value.user.js
+
+14.显示RW奖励价值
+功能：将RW结束后获得的奖励结算为市场价值
+
+https://update.greasyfork.org/scripts/473564/%E6%98%BE%E7%A4%BARW%E5%A5%96%E5%8A%B1%E4%BB%B7%E5%80%BC.user.js

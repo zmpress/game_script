@@ -11,8 +11,8 @@
 // @include      *https://www.torn.com/*
 // @grant        none
 // @website      https://www.gityx.com
-// @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/torn_cn.js
-// @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/torn_cn.js
+// @updateURL    https://g8hh.com.cn/zh/tampermonkey/torn-chs.user.js
+// @downloadURL    https://g8hh.com.cn/zh/tampermonkey/torn-chs.user.js//
 // ==/UserScript==
 /**
  * ---------------------------
