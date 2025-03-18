@@ -64,3 +64,42 @@ https://update.greasyfork.org/scripts/473564/%E6%98%BE%E7%A4%BARW%E5%A5%96%E5%8A
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/shuimu_rw_monitor.js
 
+16.喷漆
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/penqi.js
+
+17.Crime分类
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/CrimeType.js
+
+18.飞行屏蔽
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/FlightShielding.js
+
+19.log精确时间
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/log_time.js
+
+20.OCFacilitation_1.0.5.2.user.js（OC2.0专用插件）
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
+
+21.RW打地鼠
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/RW_dadishu.js
+
+22.Weapon & Armor UID-0.5.user （个人武器+ID）
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/WeaponArmor.js
+
+23.战报助手
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/AttackLogHelper.js
+
+24.一键杀人 GoCrazy
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/GoCrazy.js
+
+25.攻击助手_Easy_attack_v2.0
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/easyAttack.js
