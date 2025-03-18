@@ -103,3 +103,51 @@ https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/
 25.攻击助手_Easy_attack_v2.0
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/easyAttack.js
+
+26.toby自用crime助手
+
+https://update.greasyfork.org/scripts/515557/Crime%20Morale.user.js
+
+27.Cyclist Hunter-1.1（波波修复版）
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/CyclistHunter.js
+
+28.Torn Crimes Burglary Extended
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCrimesBurglaryExtended.user
+
+29.crack_helper-1.2.4(密码破解提示，支持PDA)
+
+https://update.greasyfork.org/scripts/482828/torn-crime-crack-helper.user.js
+
+30.Disposal 辣鸡处理犯罪脚本
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/DisposalJ.A.R.V.I.S.js
+
+31.犯罪disposal去除错误的选择
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/disposal_remove_error.js
+
+32.torn_pickpocket_sorter-1.2(期望排序，80级以上弹窗提醒单车人)
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingSorter.js
+
+33.easy_crime_v1.2（快速犯罪）.user
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/EasyCrime.js
+
+34.shoplifting_watcher_0.3.3(偷店监控，性能优化，功能增强)
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/shoplifting-watcher.js
+
+35.Torn Crimes 20 - Disposal.user
+
+https://update.greasyfork.org/scripts/481640/Torn%20Crimes%2020%20-%20Disposal.user.js
+
+36.Cyclist Ring
+
+https://update.greasyfork.org/scripts/487359/Cyclist%20Ring.user.js
+
+37.Torn Pickpocketing Colors
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingColors.js
