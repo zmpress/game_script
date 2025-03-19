@@ -151,3 +151,7 @@ https://update.greasyfork.org/scripts/487359/Cyclist%20Ring.user.js
 37.Torn Pickpocketing Colors
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingColors.js
+
+38.OC2.0成功率显示插件
+
+https://greasyfork.org/en/scripts/526834-oc-success-chance-2-0
