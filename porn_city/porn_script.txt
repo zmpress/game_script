@@ -1,11 +1,18 @@
 porn city ID：
 zmpress [3633431]
 
+========一 通用插件====================================
+
+0.torn tools
+github自行下载，也可从插件商店下载
+
+https://github.com/Mephiles/torntools_extension
+
 1.冰蛙宝鉴
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/bingwa.js
 
-2.Torn 简中汉化脚本(优先选第二个)
+2.Torn 简中汉化脚本(优先选第二个，更推荐直接网页翻译)
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/torn_cn.js
 
@@ -50,108 +57,126 @@ https://update.greasyfork.org/scripts/515870/Torn%20Market%20Quick%20Remove.user
 
 https://update.greasyfork.org/scripts/515735/Bazaar%20Item%20Search%20powered%20by%20IronNerd.user.js
 
-13.Torn Crimes奖励价值显示
+13.飞行屏蔽
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/FlightShielding.js
+
+14.log精确时间
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/log_time.js
+
+
+========二 OC插件====================================
+
+1.Torn Crimes奖励价值显示
 功能：crime成功后获得的物品显示市场价（需设置public api）（pda暂时无效）
 
 https://update.greasyfork.org/scripts/476788/Torn%20Crimes%20Rewards%20Value.user.js
 
-14.显示RW奖励价值
+2.喷漆
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/penqi.js
+
+3.Crime分类
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/CrimeType.js
+
+4.OCFacilitation_1.0.5.2.user.js（OC2.0专用插件）
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
+
+5.toby自用crime助手
+
+https://update.greasyfork.org/scripts/515557/Crime%20Morale.user.js
+
+6.Cyclist Hunter-1.1（波波修复版）
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/CyclistHunter.js
+
+7.Torn Crimes Burglary Extended
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCrimesBurglaryExtended.user
+
+8.crack_helper-1.2.4(密码破解提示，支持PDA)
+
+https://update.greasyfork.org/scripts/482828/torn-crime-crack-helper.user.js
+
+9.Disposal 辣鸡处理犯罪脚本
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/DisposalJ.A.R.V.I.S.js
+
+10.犯罪disposal去除错误的选择
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/disposal_remove_error.js
+
+11.torn_pickpocket_sorter-1.2(期望排序，80级以上弹窗提醒单车人)
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingSorter.js
+
+12.easy_crime_v1.2（快速犯罪）.user
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/EasyCrime.js
+
+13.shoplifting_watcher_0.3.3(偷店监控，性能优化，功能增强)
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/shoplifting-watcher.js
+
+14.Torn Crimes 20 - Disposal.user
+
+https://update.greasyfork.org/scripts/481640/Torn%20Crimes%2020%20-%20Disposal.user.js
+
+15.Cyclist Ring
+
+https://update.greasyfork.org/scripts/487359/Cyclist%20Ring.user.js
+
+16.Torn Pickpocketing Colors
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingColors.js
+
+17.OC2.0成功率显示插件
+
+https://update.greasyfork.org/scripts/526834/OC%20Success%20Chance%2020.user.js
+
+========三 RW相关====================================
+
+1.显示RW奖励价值
 功能：将RW结束后获得的奖励结算为市场价值
 
 https://update.greasyfork.org/scripts/473564/%E6%98%BE%E7%A4%BARW%E5%A5%96%E5%8A%B1%E4%BB%B7%E5%80%BC.user.js
 
-15.水木家族RW状态监控
+2.水木家族RW状态监控
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/shuimu_rw_monitor.js
 
-16.喷漆
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/penqi.js
-
-17.Crime分类
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/CrimeType.js
-
-18.飞行屏蔽
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/FlightShielding.js
-
-19.log精确时间
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/log_time.js
-
-20.OCFacilitation_1.0.5.2.user.js（OC2.0专用插件）
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
-
-21.RW打地鼠
+3.RW打地鼠
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/RW_dadishu.js
 
-22.Weapon & Armor UID-0.5.user （个人武器+ID）
+4.Weapon & Armor UID-0.5.user （个人武器+ID）
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/WeaponArmor.js
 
-23.战报助手
+5.战报助手
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/AttackLogHelper.js
 
-24.一键杀人 GoCrazy
+6.一键杀人 GoCrazy
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/GoCrazy.js
 
-25.攻击助手_Easy_attack_v2.0
+7.攻击助手_Easy_attack_v2.0
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/easyAttack.js
 
-26.toby自用crime助手
+========三 复活节====================================
 
-https://update.greasyfork.org/scripts/515557/Crime%20Morale.user.js
+1.Heasley's Egg Navigator
+Heasley's Egg Navigator+ESC找蛋不屏蔽键盘版
 
-27.Cyclist Hunter-1.1（波波修复版）
+https://update.greasyfork.org/scripts/463484/Heasley%27s%20Egg%20Navigator.user.js
 
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/CyclistHunter.js
+2.Eggfinder
 
-28.Torn Crimes Burglary Extended
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/EggFinder.js
 
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCrimesBurglaryExtended.user
 
-29.crack_helper-1.2.4(密码破解提示，支持PDA)
-
-https://update.greasyfork.org/scripts/482828/torn-crime-crack-helper.user.js
-
-30.Disposal 辣鸡处理犯罪脚本
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/DisposalJ.A.R.V.I.S.js
-
-31.犯罪disposal去除错误的选择
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/disposal_remove_error.js
-
-32.torn_pickpocket_sorter-1.2(期望排序，80级以上弹窗提醒单车人)
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingSorter.js
-
-33.easy_crime_v1.2（快速犯罪）.user
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/EasyCrime.js
-
-34.shoplifting_watcher_0.3.3(偷店监控，性能优化，功能增强)
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/shoplifting-watcher.js
-
-35.Torn Crimes 20 - Disposal.user
-
-https://update.greasyfork.org/scripts/481640/Torn%20Crimes%2020%20-%20Disposal.user.js
-
-36.Cyclist Ring
-
-https://update.greasyfork.org/scripts/487359/Cyclist%20Ring.user.js
-
-37.Torn Pickpocketing Colors
-
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingColors.js
-
-38.OC2.0成功率显示插件
-
-https://update.greasyfork.org/scripts/526834/OC%20Success%20Chance%2020.user.js
