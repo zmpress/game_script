@@ -179,4 +179,6 @@ https://update.greasyfork.org/scripts/463484/Heasley%27s%20Egg%20Navigator.user.
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/EggFinder.js
 
+3.Eggladder.js
 
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/Eggladder.js
