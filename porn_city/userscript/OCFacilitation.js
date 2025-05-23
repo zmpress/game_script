@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         OCFacilitation
 // @namespace    https://greasyfork.org/users/[daluo]
-// @version      1.0.5.2
+// @version      1.0.5.4
 // @description  Make OC 2.0 easier for regular players
 // @description:zh-CN  使普通玩家oc2.0更简单和方便
 // @author       daluo
 // @match        https://www.torn.com/*
+// @run-at       document-start
 // @grant        GM_xmlhttpRequest
-// @connect      *
+// // @connect      *
 // @license      MIT
 // @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
 // @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
@@ -269,8 +270,8 @@
         constructor(data) {
             this.position = data.position;
             this.item_requirement = data.item_requirement ? new ItemRequirement(data.item_requirement) : null;
-            this.user_id = data.user_id;
             this.user = data.user ? new User(data.user) : null;
+            this.user_id = this.user?.id;
             this.success_chance = data.success_chance;
         }
         // 是否有玩家
@@ -670,48 +671,21 @@
         }
 
         /**
-         * 检查是否为移动端
-         * @returns {boolean}
-         */
-        isMobileDevice() {
-            return document.querySelector('.user-information-mobile___WjXnd') !== null;
-        }
-
-        /**
-         * 获取状态容器父元素
-         * @returns {HTMLElement|null}
-         */
-        getStatusContainerParent() {
-            if (this.isMobileDevice()) {
-                return document.querySelector('.user-information-mobile___WjXnd');
-            } else {
-                return document.getElementsByClassName("status-icons___gPkXF")[0]?.parentNode;
-            }
-        }
-
-        /**
          * 更新状态图标
          */
         updateStatusIcons(userId) {
-            const containerParent = this.getStatusContainerParent();
-            if (!containerParent) return;
-
-            const ocStatusContainer = this.createStatusContainer();
-            this.removeOldContainer();
-
+            // 获取状态容器
+            const ocStatusContainer = document.getElementById('oc-status-container');
+            if (!ocStatusContainer) {
+                console.error('未找到状态容器');
+                return;
+            };
             const userCrime = this.findUserCrime(userId);
             if (userCrime) {
                 this.renderParticipatingStatus(ocStatusContainer, userCrime,userId);
             } else {
                 this.renderNonParticipatingStatus(ocStatusContainer);
             }
-
-            if (this.isMobileDevice()) {
-                ocStatusContainer.style.margin = '10px 15px';
-                ocStatusContainer.style.width = 'calc(100% - 30px)';
-            }
-
-            containerParent.appendChild(ocStatusContainer);
         }
 
         /**
@@ -721,28 +695,6 @@
             return this.crimeInfo.crimes.find(crime =>
                 crime.slots.some(slot => slot.user_id === userId)
             );
-        }
-
-        /**
-         * 创建状态容器
-         */
-        createStatusContainer() {
-            const container = document.createElement('div');
-            container.style.display = 'flex';
-            container.style.flexDirection = 'column';
-            container.style.marginTop = '10px';
-            container.id = 'oc-status-container';
-            return container;
-        }
-
-        /**
-         * 移除旧的状态容器
-         */
-        removeOldContainer() {
-            const oldContainer = document.getElementById('oc-status-container');
-            if (oldContainer) {
-                oldContainer.remove();
-            }
         }
 
         /**
@@ -1308,6 +1260,54 @@
             }
             this.isUpdating = false;
         }
+        /**
+         * 获取状态容器父元素
+         * @returns {HTMLElement|null}
+         */
+        getStatusContainerParent() {
+            if (Utils.isMobileDevice()) {
+                return document.querySelector('.user-information-mobile___WjXnd');
+            } else {
+                return document.getElementsByClassName("status-icons___gPkXF")[0]?.parentNode;
+            }
+        }
+
+        /**
+         * 创建状态容器
+         */
+        createStatusContainer() {
+            const containerParent = this.getStatusContainerParent();
+            if (!containerParent) {
+                console.error('找不到状态容器的父元素');
+                return null;
+            }
+            this.removeOldContainer();
+            const container = document.createElement('div');
+            container.style.display = 'flex';
+            container.style.flexDirection = 'column';
+            container.style.height = '32px';
+            container.style.marginTop = '10px';
+            container.id = 'oc-status-container';
+
+            if (Utils.isMobileDevice()) {
+                container.style.margin = '10px 15px';
+                container.style.width = 'calc(100% - 30px)';
+            }
+
+            containerParent.appendChild(container);
+            return container;
+        }
+
+        /**
+         * 移除旧的状态容器
+         */
+        removeOldContainer() {
+            const oldContainer = document.getElementById('oc-status-container');
+            if (oldContainer) {
+                oldContainer.remove();
+            }
+        }
+
 
         /**
          * 初始化程序
@@ -1363,7 +1363,13 @@
     // 启动程序
     (() => {
         const app = new OCFacilitation();
-        app.initialize();
+        const createStatusContainerInterval = setInterval(() => {
+            if (app.createStatusContainer() !== null) {
+                clearInterval(createStatusContainerInterval);
+                console.log("创建状态容器成功");
+                app.initialize();
+            }
+        },300)
 
         // 页面卸载时清理资源
         window.addEventListener('unload', () => {
