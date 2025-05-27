@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         OCFacilitation
 // @namespace    https://greasyfork.org/users/[daluo]
-// @version      1.0.5.4
+// @version      1.0.5.5
 // @description  Make OC 2.0 easier for regular players
 // @description:zh-CN  使普通玩家oc2.0更简单和方便
 // @author       daluo
@@ -260,6 +260,8 @@
             if (!data) return null;
             this.id = data.id;
             this.joined_at = data.joined_at;
+            this.progress = data.progress;
+            this.outcome = data.outcome;
         }
     }
 
@@ -731,25 +733,50 @@
 
         /**
          * 分段图标信息
+         * @param {Object} slot - 犯罪任务插槽信息
+         * @param {number} speedOfProgress - 犯罪任务进度
+         * @param {number} index - 插槽索引
+         * @returns {Object} - 分段图标信息
          */
         getSegmentedIconInfo(slot,speedOfProgress,index) {
             let SegmentedIconInfo = new Array()
             // 根据 speedOfProgress 设置颜色
-            if (index < Math.floor(speedOfProgress)) {
-                // 完全完成的 slot
-                SegmentedIconInfo.push({color:'#5cb85c',percentage:100})
-            } else if (index === Math.floor(speedOfProgress)) {
-                // 部分完成的 slot
-                const completionPercentage = speedOfProgress % 1; // 获取小数部分
-                SegmentedIconInfo.push({color:'#5cb85c',percentage:completionPercentage * 100})          // 绿色部分
-                SegmentedIconInfo.push({color:'#FFC107',percentage:(1-completionPercentage) * 100})          // 黄色部分
-            } else if (slot.user_id) {
-                // 有用户但未完成的 slot
-                SegmentedIconInfo.push({color:'#FFC107',percentage:100})
+            // 是否有用户
+            if (slot.user_id) {
+                // 判断该solt状态，未开始 进行中 已完成
+                if (slot.user.progress === 0) {
+                    // 未开始
+                    SegmentedIconInfo.push({color:'#FFC107',percentage:100})
+                } else if (slot.user.progress === 100) {
+                    // 已完成
+                    SegmentedIconInfo.push({color:'#5cb85c',percentage:100})
+                } else {
+                    // 进行中
+                    const completionPercentage = speedOfProgress % 1; // 获取小数部分
+                    SegmentedIconInfo.push({color:'#5cb85c',percentage:completionPercentage * 100})          // 绿色部分
+                    SegmentedIconInfo.push({color:'#FFC107',percentage:(1-completionPercentage) * 100})          // 黄色部分
+                }
+
             } else {
-                // 没有用户的 slot
+                // 没有用户
                 SegmentedIconInfo.push({color:'#a4a4a4',percentage:100})
             }
+
+            // if (index < Math.floor(speedOfProgress)) {
+            //     // 完全完成的 slot
+            //     SegmentedIconInfo.push({color:'#5cb85c',percentage:100})
+            // } else if (index === Math.floor(speedOfProgress)) {
+            //     // 部分完成的 slot
+            //     const completionPercentage = speedOfProgress % 1; // 获取小数部分
+            //     SegmentedIconInfo.push({color:'#5cb85c',percentage:completionPercentage * 100})          // 绿色部分
+            //     SegmentedIconInfo.push({color:'#FFC107',percentage:(1-completionPercentage) * 100})          // 黄色部分
+            // } else if (slot.user_id) {
+            //     // 有用户但未开始的 slot
+            //     SegmentedIconInfo.push({color:'#FFC107',percentage:100})
+            // } else {
+            //     // 没有用户的 slot
+            //     SegmentedIconInfo.push({color:'#a4a4a4',percentage:100})
+            // }
             return SegmentedIconInfo;
         }
 
@@ -1049,7 +1076,6 @@
             toolMark.style.width = '6px';
             toolMark.style.height = '6px';
             toolMark.style.borderRadius = '50%';
-            // toolMark.style.border = '1px solid #FFA000';
             toolMark.style.transform = 'translate(25%, 25%)';
             if (slot.isEmptySolt()) {
                 toolMark.style.backgroundColor = '#FFC107';
@@ -1151,16 +1177,16 @@
                 joinLink.style.textShadow = '0 0 1px rgba(255, 255, 255, 0.5)';
             });
 
-            joinLink.addEventListener('click', async () => {
-                try {
-                    const newData = await APIManager.getCrimeData();
-                    this.crimeInfo = newData;
-                    const player_id = CONFIG.USER_ID;
-                    this.updateStatusIcons(player_id);
-                } catch (error) {
-                    console.error('更新OC数据失败:', error);
-                }
-            });
+            // joinLink.addEventListener('click', async () => {
+            //     try {
+            //         const newData = await APIManager.getCrimeData();
+            //         this.crimeInfo = newData;
+            //         const player_id = CONFIG.USER_ID;
+            //         this.updateStatusIcons(player_id);
+            //     } catch (error) {
+            //         console.error('更新OC数据失败:', error);
+            //     }
+            // });
         }
     }
 
@@ -1169,7 +1195,6 @@
         constructor() {
             this.crimeInfo = null;
             this.currentTab = null;
-            this.isInitialized = false;
             this.isUpdating = false;
             this.observer = null;
             this.statusIconManager = null;
@@ -1316,9 +1341,8 @@
             try {
                 await this.initializeData();
                 await this.setupStatusIcons();
+                // 处理oc界面的ui
                 this.setupPageChangeListeners();
-
-                this.isInitialized = true;
             } catch (error) {
                 console.error('初始化失败:', error);
             }
@@ -1332,6 +1356,8 @@
             const playerInfo = await APIManager.fetchPlayerInfo();
             CONFIG.USER_ID = playerInfo.player_id;
             this.crimeInfo = await APIManager.getCrimeData();
+            console.log('初始化数据成功', this.crimeInfo);
+
             this.statusIconManager = new StatusIconManager(this.crimeInfo);
         }
 
