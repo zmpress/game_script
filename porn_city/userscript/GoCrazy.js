@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         一键杀人 GoCrazy
 // @namespace    http://tampermonkey.net/
-// @version      2.0
+// @version      2.4
 // @description  Spam click to finish the fight, even when enemy is in hospital or travelling.
-// @author       bot_7420 [2937420]
+// @author       bot_7420 [2937420], Luochen [2956255]
 // @match        https://www.torn.com/loader.php?sid=attack&user2ID=*
 // @run-at       document-start
 // @grant        unsafeWindow
@@ -17,6 +17,7 @@
     "use strict";
 
     const SCRIPTED_MOVE_CLASSNAME = "scripted-move";
+    const SCRIPTED_REPEATED_MOVE_CLASSNAME = "scripted-move-repeated";
     const removeQueryList = ["div#tt-page-status", "div#header-root", "div.log___HL_LJ", "div#chatRoot"];
     const removeQueryListAgressive = [
         "div#tt-page-status",
@@ -130,6 +131,12 @@
           border: 5px solid red !important;
           z-index: 1000 !important;
       }
+
+      .scripted-move-repeated {
+          left: auto !important;
+          right 0 !important;
+      }
+
       .scripted-move-disabled {
         position: fixed !important;
         top: 0 !important;
@@ -201,14 +208,14 @@
     }
 
     /* Sequence move fighting action buttons */
-    const areaObserverConfig = { attributes: true, childList: true, subtree: true };
+    const areaObserverConfig = { attributes: true, childList: true, subtree: true, characterData: true };
     const areaObserver = new MutationObserver(() => {
         handleAreaChange();
     });
     tryObserveArea();
 
     function tryObserveArea() {
-        const area = document.querySelector("div.players___WPQ05");
+        const area = document.querySelector("div[class*=players___]");
         if (area) {
             console.log("GoCrazy: areaObserver observe");
             areaObserver.observe(area, areaObserverConfig);
@@ -224,14 +231,17 @@
             return;
         }
 
-        const weaponsWrapper = document.querySelector("div#attacker div.weaponList___raakm");
+        const attacker = document.querySelectorAll("div[class*=player___]")[0];
+        const weaponsWrapper = attacker.querySelector("div[class*=weaponList___]");
         const primaryWeapon = weaponsWrapper.querySelector("div#weapon_main img");
+        const secondaryWeapon = weaponsWrapper.querySelector("div#weapon_second img");
         const meleeWeapon = weaponsWrapper.querySelector("div#weapon_melee img");
         const tempWeapon = weaponsWrapper.querySelector("div#weapon_temp img");
         let isOutOfFight = false;
 
         // Move start and end fight buttons
-        const buttonsWrapper = document.querySelector("div#defender div.dialogButtons___nX4Bz");
+        const defender = document.querySelectorAll("div[class*=player___]")[1];
+        const buttonsWrapper = defender.querySelector("div[class*=dialogButtons___]");
         if (buttonsWrapper) {
             for (const button of buttonsWrapper.children) {
                 const innerText = button.innerText.toLowerCase();
@@ -241,13 +251,28 @@
                         button.classList.add(SCRIPTED_MOVE_CLASSNAME);
                     }
                     isOutOfFight = true;
-                } else if (innerText.includes(localStorage.getItem("goCrazy_leaveChoice"))) {
+                }
+                else if (innerText.includes("join fight")) {
+                    if (!button.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
+
+                        console.log("GoCrazy: move join");
+                        button.classList.add(SCRIPTED_MOVE_CLASSNAME);
+
+                        if (localStorage.getItem("goCrazy_canRepeated") === "true") {
+                            console.log("GoCrazy: move join - REPETED");
+                            button.classList.add(SCRIPTED_REPEATED_MOVE_CLASSNAME);
+                        }
+                    }
+                    isOutOfFight = true;
+                }
+                else if (innerText.includes(localStorage.getItem("goCrazy_leaveChoice"))) {
                     if (!button.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
                         console.log("GoCrazy: move choice " + localStorage.getItem("goCrazy_leaveChoice"));
                         button.classList.add(SCRIPTED_MOVE_CLASSNAME);
                     }
                     isOutOfFight = true;
-                } else if (innerText.includes("continue")) {
+                }
+                else if (innerText.includes("continue")) {
                     if (!button.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
                         console.log("GoCrazy: move continue");
                         button.classList.add(SCRIPTED_MOVE_CLASSNAME);
@@ -259,17 +284,20 @@
                 }
             }
         }
-        if (document.querySelector("div#defender div.preloader___xhmsX")) {
+        if (defender.querySelector("div[class*=preloader___]")) {
             isOutOfFight = true;
         }
 
         if (isOutOfFight) {
-            if (weaponsWrapper && primaryWeapon && meleeWeapon && tempWeapon) {
+            if (weaponsWrapper && primaryWeapon && secondaryWeapon && meleeWeapon && tempWeapon) {
                 if (tempWeapon.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
                     tempWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
                 }
                 if (primaryWeapon.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
                     primaryWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
+                }
+                if (secondaryWeapon.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
+                    secondaryWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
                 }
                 if (meleeWeapon.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
                     meleeWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
@@ -279,7 +307,7 @@
         }
 
         // Move weapon buttons
-        if (!(weaponsWrapper && primaryWeapon && meleeWeapon && tempWeapon)) {
+        if (!(weaponsWrapper && primaryWeapon && secondaryWeapon && meleeWeapon && tempWeapon)) {
             return;
         }
         if (localStorage.getItem("goCrazy_useTempWeapon") === "true" && hasTempAmmo()) {
@@ -287,19 +315,30 @@
                 console.log("GoCrazy: move tempWeapon");
                 tempWeapon.classList.add(SCRIPTED_MOVE_CLASSNAME);
                 primaryWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
+                secondaryWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
                 meleeWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
             }
-        } else if (localStorage.getItem("goCrazy_useMeleeWeapon") === "true" || (localStorage.getItem("goCrazy_useMeleeWeapon") === "false" && !hasPrimaryAmmo())) {
+        } else if (localStorage.getItem("goCrazy_useWeapon") === "melee" || (localStorage.getItem("goCrazy_useWeapon") === "primary" && !hasPrimaryAmmo()) || (localStorage.getItem("goCrazy_useWeapon") === "secondary" && !hasSecondaryAmmo())) {
             if (!meleeWeapon.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
                 console.log("GoCrazy: move meleeWeapon");
                 meleeWeapon.classList.add(SCRIPTED_MOVE_CLASSNAME);
                 primaryWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
+                secondaryWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
                 tempWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
             }
-        } else if (localStorage.getItem("goCrazy_useMeleeWeapon") === "false" && hasPrimaryAmmo()) {
+        } else if (localStorage.getItem("goCrazy_useWeapon") === "primary" && hasPrimaryAmmo()) {
             if (!primaryWeapon.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
                 console.log("GoCrazy: move primaryWeapon");
                 primaryWeapon.classList.add(SCRIPTED_MOVE_CLASSNAME);
+                meleeWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
+                secondaryWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
+                tempWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
+            }
+        } else if (localStorage.getItem("goCrazy_useWeapon") === "secondary" && hasSecondaryAmmo()) {
+            if (!secondaryWeapon.classList.contains(SCRIPTED_MOVE_CLASSNAME)) {
+                console.log("GoCrazy: move secondaryWeapon");
+                secondaryWeapon.classList.add(SCRIPTED_MOVE_CLASSNAME);
+                primaryWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
                 meleeWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
                 tempWeapon.classList.remove(SCRIPTED_MOVE_CLASSNAME);
             }
@@ -307,7 +346,8 @@
     }
 
     function hasTempAmmo() {
-        const ammoEle = document.querySelector("div#attacker div#weapon_temp span.ammo-status");
+        const attacker = document.querySelectorAll("div[class*=player___]")[0];
+        const ammoEle = attacker.querySelector("div#weapon_temp span[class*=standard__]");
         if (!ammoEle) {
             console.error("GoCrazy: hasTempAmmo can not find element");
             return false;
@@ -316,9 +356,20 @@
     }
 
     function hasPrimaryAmmo() {
-        const ammoEle = document.querySelector("div#attacker div#weapon_main span.ammo-status");
+        const attacker = document.querySelectorAll("div[class*=player___]")[0];
+        const ammoEle = attacker.querySelector("div#weapon_main div[class*=bottom___] span[class*=markerText___]");
         if (!ammoEle) {
             console.error("GoCrazy: hasPrimaryAmmo can not find element");
+            return false;
+        }
+        return !ammoEle.innerText.includes("No");
+    }
+
+    function hasSecondaryAmmo() {
+        const attacker = document.querySelectorAll("div[class*=player___]")[0];
+        const ammoEle = attacker.querySelector("div#weapon_second div[class*=bottom___] span[class*=markerText___]");
+        if (!ammoEle) {
+            console.error("GoCrazy: hasSecondaryAmmo can not find element");
             return false;
         }
         return !ammoEle.innerText.includes("No");
@@ -341,14 +392,20 @@
     <label><input type="radio" name="leaveChoice" value="leave" id="leaveChoice-leave"/>Leave</label>
     <label><input type="radio" name="leaveChoice" value="mug" id="leaveChoice-mug"/>Mug</label>
     <label><input type="radio" name="leaveChoice" value="hospitalize" id="leaveChoice-hospitalize"/>Hospitalize</label>
+    <label><input type="radio" name="leaveChoice" value="none" id="leaveChoice-none"/>Hold后自己选</label>
     <br>
     <span>使用Temp武器： </span>
     <label><input type="radio" name="useTempWeapon" value="true" id="useTempWeapon-true"/>是</label>
     <label><input type="radio" name="useTempWeapon" value="false" id="useTempWeapon-false"/>否</label>
     <br>
     <span>默认武器： </span>
-    <label><input type="radio" name="useMeleeWeapon" value="true" id="useMeleeWeapon-true"/>Melee</label>
-    <label><input type="radio" name="useMeleeWeapon" value="false" id="useMeleeWeapon-false"/>Primary</label>
+    <label><input type="radio" name="useWeapon" value="true" id="useWeapon-melee"/>Melee</label>
+    <label><input type="radio" name="useWeapon" value="false" id="useWeapon-primary"/>Primary</label>
+    <label><input type="radio" name="useWeapon" value="false" id="useWeapon-secondary"/>Secondary</label>
+    <br>
+    <span>防打重： </span>
+    <label><input type="radio" name="canRepeated" value="true" id="canRepeated-true"/>是</label>
+    <label><input type="radio" name="canRepeated" value="false" id="canRepeated-false"/>否</label>
     `;
 
         if (localStorage.getItem("goCrazy_useAttackInHosp") === "true") {
@@ -371,6 +428,8 @@
             div.querySelector("input#leaveChoice-mug").checked = true;
         } else if (localStorage.getItem("goCrazy_leaveChoice") === "hospitalize") {
             div.querySelector("input#leaveChoice-hospitalize").checked = true;
+        } else if (localStorage.getItem("goCrazy_leaveChoice") === "none") {
+            div.querySelector("input#leaveChoice-none").checked = true;
         }
 
         if (localStorage.getItem("goCrazy_useTempWeapon") === "true") {
@@ -379,10 +438,18 @@
             div.querySelector("input#useTempWeapon-false").checked = true;
         }
 
-        if (localStorage.getItem("goCrazy_useMeleeWeapon") === "true") {
-            div.querySelector("input#useMeleeWeapon-true").checked = true;
-        } else if (localStorage.getItem("goCrazy_useMeleeWeapon") === "false") {
-            div.querySelector("input#useMeleeWeapon-false").checked = true;
+        if (localStorage.getItem("goCrazy_useWeapon") === "melee") {
+            div.querySelector("input#useWeapon-melee").checked = true;
+        } else if (localStorage.getItem("goCrazy_useWeapon") === "primary") {
+            div.querySelector("input#useWeapon-primary").checked = true;
+        } else if (localStorage.getItem("goCrazy_useWeapon") === "secondary") {
+            div.querySelector("input#useWeapon-secondary").checked = true;
+        }
+
+        if (localStorage.getItem("goCrazy_canRepeated") === "true") {
+            div.querySelector("input#canRepeated-true").checked = true;
+        } else if (localStorage.getItem("goCrazy_canRepeated") === "false") {
+            div.querySelector("input#canRepeated-false").checked = true;
         }
 
         div.querySelector("input#useAttackInHosp-false").addEventListener("change", (event) => {
@@ -430,6 +497,11 @@
                 localStorage.setItem("goCrazy_leaveChoice", "hospitalize");
             }
         });
+        div.querySelector("input#leaveChoice-none").addEventListener("change", (event) => {
+            if (event.target.checked) {
+                localStorage.setItem("goCrazy_leaveChoice", "none");
+            }
+        });
 
         div.querySelector("input#useTempWeapon-true").addEventListener("change", (event) => {
             if (event.target.checked) {
@@ -442,14 +514,30 @@
             }
         });
 
-        div.querySelector("input#useMeleeWeapon-true").addEventListener("change", (event) => {
+        div.querySelector("input#useWeapon-melee").addEventListener("change", (event) => {
             if (event.target.checked) {
-                localStorage.setItem("goCrazy_useMeleeWeapon", true);
+                localStorage.setItem("goCrazy_useWeapon", 'melee');
             }
         });
-        div.querySelector("input#useMeleeWeapon-false").addEventListener("change", (event) => {
+        div.querySelector("input#useWeapon-primary").addEventListener("change", (event) => {
             if (event.target.checked) {
-                localStorage.setItem("goCrazy_useMeleeWeapon", false);
+                localStorage.setItem("goCrazy_useWeapon", 'primary');
+            }
+        });
+        div.querySelector("input#useWeapon-secondary").addEventListener("change", (event) => {
+            if (event.target.checked) {
+                localStorage.setItem("goCrazy_useWeapon", 'secondary');
+            }
+        });
+
+        div.querySelector("input#canRepeated-true").addEventListener("change", (event) => {
+            if (event.target.checked) {
+                localStorage.setItem("goCrazy_canRepeated", true);
+            }
+        });
+        div.querySelector("input#canRepeated-false").addEventListener("change", (event) => {
+            if (event.target.checked) {
+                localStorage.setItem("goCrazy_canRepeated", false);
             }
         });
     }
@@ -467,8 +555,11 @@
         if (!localStorage.getItem("goCrazy_useTempWeapon")) {
             localStorage.setItem("goCrazy_useTempWeapon", true);
         }
-        if (!localStorage.getItem("goCrazy_useMeleeWeapon")) {
-            localStorage.setItem("goCrazy_useMeleeWeapon", true);
+        if (!localStorage.getItem("goCrazy_useWeapon")) {
+            localStorage.setItem("goCrazy_useWeapon", 'melee');
+        }
+        if (!localStorage.getItem("goCrazy_canRepeated")) {
+            localStorage.setItem("goCrazy_canRepeated", false);
         }
     }
 })();
