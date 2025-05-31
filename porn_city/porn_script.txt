@@ -54,8 +54,10 @@ https://update.greasyfork.org/scripts/513920/Torn%20Market%20Filler.user.js
 https://update.greasyfork.org/scripts/515870/Torn%20Market%20Quick%20Remove.user.js
 
 12.旧巴扎搜索插件
-
+旧
 https://update.greasyfork.org/scripts/515735/Bazaar%20Item%20Search%20powered%20by%20IronNerd.user.js
+新
+
 
 13.飞行屏蔽
 
