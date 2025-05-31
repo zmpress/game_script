@@ -57,6 +57,7 @@ https://update.greasyfork.org/scripts/515870/Torn%20Market%20Quick%20Remove.user
 旧
 https://update.greasyfork.org/scripts/515735/Bazaar%20Item%20Search%20powered%20by%20IronNerd.user.js
 新
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/Bazaar.js
 
 
 13.飞行屏蔽
