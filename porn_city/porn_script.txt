@@ -140,6 +140,11 @@ https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/
 
 https://update.greasyfork.org/scripts/526834/OC%20Success%20Chance%2020.user.js
 
+18.Torn Stats Faction CPR Tracker TS共享OC成功率
+
+https://update.greasyfork.org/scripts/538377/Torn%20Stats%20Faction%20CPR%20Tracker.user.js
+
+
 ========三 RW相关====================================
 
 1.显示RW奖励价值
