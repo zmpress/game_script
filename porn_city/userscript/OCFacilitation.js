@@ -14,7 +14,7 @@
 // @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
 
 // ==/UserScript==
-
+let hasUpdatedStatusIcons = false;
 (function() {
     'use strict';
 
@@ -676,12 +676,19 @@
          * 更新状态图标
          */
         updateStatusIcons(userId) {
+            if (hasUpdatedStatusIcons) return;
+            hasUpdatedStatusIcons = true;
             // 获取状态容器
             const ocStatusContainer = document.getElementById('oc-status-container');
             if (!ocStatusContainer) {
                 console.error('未找到状态容器');
                 return;
             };
+
+            // 🧹 清空旧的内容
+            ocStatusContainer.innerHTML = '';
+
+
             const userCrime = this.findUserCrime(userId);
             if (userCrime) {
                 this.renderParticipatingStatus(ocStatusContainer, userCrime,userId);
