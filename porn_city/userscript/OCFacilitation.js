@@ -14,7 +14,7 @@
 // @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
 
 // ==/UserScript==
-let hasUpdatedStatusIcons = false;
+
 (function() {
     'use strict';
 
@@ -676,8 +676,6 @@ let hasUpdatedStatusIcons = false;
          * 更新状态图标
          */
         updateStatusIcons(userId) {
-            if (hasUpdatedStatusIcons) return;
-            hasUpdatedStatusIcons = true;
             // 获取状态容器
             const ocStatusContainer = document.getElementById('oc-status-container');
             if (!ocStatusContainer) {
