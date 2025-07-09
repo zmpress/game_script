@@ -1342,7 +1342,7 @@
         /**
          * 初始化程序
          */
-/*        async initialize() {
+        async initialize() {
             try {
                 await this.initializeData();
                 await this.setupStatusIcons();
@@ -1351,40 +1351,6 @@
             } catch (error) {
                 console.error('初始化失败:', error);
             }
-        }*/
-        async initialize() {
-            // 使用 window 上的全局锁
-            if (!window.__ocFacilitationInitState) {
-                window.__ocFacilitationInitState = {
-                    initialized: false,
-                    initializingPromise: null
-                };
-            }
-            const globalInit = window.__ocFacilitationInitState;
-
-            if (globalInit.initialized) {
-                console.log("⚠ initialize 已经执行过，跳过。");
-                return;
-            }
-            if (globalInit.initializingPromise) {
-                console.log("⚠ initialize 正在执行，等待...");
-                return globalInit.initializingPromise;
-            }
-
-            globalInit.initializingPromise = (async () => {
-                try {
-                    console.log("🚀 开始执行 initialize()");
-                    await this.initializeData();
-                    await this.setupStatusIcons();
-                    this.setupPageChangeListeners();
-                    globalInit.initialized = true;
-                    console.log("✅ initialize 执行完成");
-                } catch (error) {
-                    console.error('初始化失败:', error);
-                }
-            })();
-
-            return globalInit.initializingPromise;
         }
 
         /**
@@ -1426,7 +1392,7 @@
     }
 
     // 启动程序
-    (() => {
+/*    (() => {
         const app = new OCFacilitation();
         const createStatusContainerInterval = setInterval(() => {
             if (app.createStatusContainer() !== null) {
@@ -1437,6 +1403,28 @@
         },300)
 
         // 页面卸载时清理资源
+        window.addEventListener('unload', () => {
+            app.cleanup();
+        });
+    })();*/
+    (() => {
+        // 防止多次启动
+        if (window.__ocFacilitationAppStarted) {
+            console.log("⚠ 启动程序已经执行过，跳过");
+            return;
+        }
+        window.__ocFacilitationAppStarted = true;
+        console.log("🚀 第一次启动程序");
+
+        const app = new OCFacilitation();
+        const createStatusContainerInterval = setInterval(() => {
+            if (app.createStatusContainer() !== null) {
+                clearInterval(createStatusContainerInterval);
+                console.log("✅ 创建状态容器成功");
+                app.initialize();
+            }
+        }, 300);
+
         window.addEventListener('unload', () => {
             app.cleanup();
         });
