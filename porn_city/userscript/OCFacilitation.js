@@ -684,7 +684,7 @@
             };
 
             // 🧹 清空旧的内容
-            ocStatusContainer.innerHTML = '';
+            // ocStatusContainer.innerHTML = '';
 
 
             const userCrime = this.findUserCrime(userId);
@@ -1342,7 +1342,7 @@
         /**
          * 初始化程序
          */
-        async initialize() {
+/*        async initialize() {
             try {
                 await this.initializeData();
                 await this.setupStatusIcons();
@@ -1351,6 +1351,40 @@
             } catch (error) {
                 console.error('初始化失败:', error);
             }
+        }*/
+        async initialize() {
+            // 使用 window 上的全局锁
+            if (!window.__ocFacilitationInitState) {
+                window.__ocFacilitationInitState = {
+                    initialized: false,
+                    initializingPromise: null
+                };
+            }
+            const globalInit = window.__ocFacilitationInitState;
+
+            if (globalInit.initialized) {
+                console.log("⚠ initialize 已经执行过，跳过。");
+                return;
+            }
+            if (globalInit.initializingPromise) {
+                console.log("⚠ initialize 正在执行，等待...");
+                return globalInit.initializingPromise;
+            }
+
+            globalInit.initializingPromise = (async () => {
+                try {
+                    console.log("🚀 开始执行 initialize()");
+                    await this.initializeData();
+                    await this.setupStatusIcons();
+                    this.setupPageChangeListeners();
+                    globalInit.initialized = true;
+                    console.log("✅ initialize 执行完成");
+                } catch (error) {
+                    console.error('初始化失败:', error);
+                }
+            })();
+
+            return globalInit.initializingPromise;
         }
 
         /**
