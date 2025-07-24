@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         OCFacilitation
 // @namespace    https://greasyfork.org/users/[daluo]
-// @version      1.0.5.5
+// @version      1.0.5.6
 // @description  Make OC 2.0 easier for regular players
 // @description:zh-CN  使普通玩家oc2.0更简单和方便
 // @author       daluo
@@ -17,6 +17,11 @@
 
 (function() {
     'use strict';
+
+    // 防止PDA多次加载脚本 zmpress [3633431] 发现问题并提供解决思路
+    if (window.__ocFacilitationAppStarted) return;
+    window.__ocFacilitationAppStarted = true;
+    console.log("🚀 第一次启动程序");
 
     // =============== 常量定义 ===============
     const DEFAULT_API_KEY = "不使用冰蛙的大佬,替换成自己的apiKey,limit就可以";
@@ -391,7 +396,6 @@
 
             // 如果排序按钮不存在则添加排序按钮
             const sortButtonSet = crimeListContainer.parentElement.getElementsByClassName('sort-button');
-            console.log(crimeListContainer.parentElement,sortButtonSet);
 
             if (sortButtonSet.length === 0) {
                 this.addSortButton(crimeListContainer);
@@ -650,15 +654,24 @@
          * 从Torn API获取玩家基本信息
          * @returns {Promise<Object>} 玩家信息
          */
-        static async fetchPlayerInfo() {
+        static async getPlayerId() {
+
+            // 玩家id不会改变,所以之后直接使用缓存
+            const playerId =  localStorage.getItem('sessionTokenOwner')||localStorage.getItem('PlayerId');
+            if (playerId !== null) return parseInt(playerId)
+
+            // 缓存不存在
             try {
                 const response = await fetch(`https://api.torn.com/user/?selections=basic&key=${CONFIG.API.KEY}`);
                 const data = await response.json();
                 if (data.error) {
                     throw new Error(`API错误: ${data.error.error}`);
                 }
+                const playerId = data.player_id;
 
-                return data;
+                // 缓存数据
+                localStorage.setItem('PlayerId', playerId);
+                return parseInt(playerId);
             } catch (error) {
                 console.error('获取玩家信息失败:', error);
                 throw error;
@@ -682,11 +695,6 @@
                 console.error('未找到状态容器');
                 return;
             };
-
-            // 🧹 清空旧的内容
-            // ocStatusContainer.innerHTML = '';
-
-
             const userCrime = this.findUserCrime(userId);
             if (userCrime) {
                 this.renderParticipatingStatus(ocStatusContainer, userCrime,userId);
@@ -1358,11 +1366,9 @@
          */
         async initializeData() {
             // 直接从API获取新数据
-            const playerInfo = await APIManager.fetchPlayerInfo();
-            CONFIG.USER_ID = playerInfo.player_id;
+            const playerId = await APIManager.getPlayerId();
+            CONFIG.USER_ID = playerId;
             this.crimeInfo = await APIManager.getCrimeData();
-            console.log('初始化数据成功', this.crimeInfo);
-
             this.statusIconManager = new StatusIconManager(this.crimeInfo);
         }
 
@@ -1371,8 +1377,8 @@
          */
         async setupStatusIcons() {
             // 获取玩家信息并更新状态图标
-            const player_id = CONFIG.USER_ID;
-            this.statusIconManager.updateStatusIcons(player_id);
+            const playerId = CONFIG.USER_ID;
+            this.statusIconManager.updateStatusIcons(playerId);
         }
 
         /**
@@ -1392,39 +1398,16 @@
     }
 
     // 启动程序
-/*    (() => {
+    (() => {
         const app = new OCFacilitation();
         const createStatusContainerInterval = setInterval(() => {
             if (app.createStatusContainer() !== null) {
-                clearInterval(createStatusContainerInterval);
-                console.log("创建状态容器成功");
                 app.initialize();
+                clearInterval(createStatusContainerInterval);
             }
         },300)
 
         // 页面卸载时清理资源
-        window.addEventListener('unload', () => {
-            app.cleanup();
-        });
-    })();*/
-    (() => {
-        // 防止多次启动
-        if (window.__ocFacilitationAppStarted) {
-            console.log("⚠ 启动程序已经执行过，跳过");
-            return;
-        }
-        window.__ocFacilitationAppStarted = true;
-        console.log("🚀 第一次启动程序");
-
-        const app = new OCFacilitation();
-        const createStatusContainerInterval = setInterval(() => {
-            if (app.createStatusContainer() !== null) {
-                clearInterval(createStatusContainerInterval);
-                console.log("✅ 创建状态容器成功");
-                app.initialize();
-            }
-        }, 300);
-
         window.addEventListener('unload', () => {
             app.cleanup();
         });
