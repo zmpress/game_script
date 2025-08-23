@@ -6,7 +6,7 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=torn.com
 // @author       Korbrm [2931507]
 // @license      MIT License
-// @match        https://www.torn.com/loader.php?sid=crimes*
+// @match        https://www.torn.com/page.php?sid=crimes*
 // @grant        none
 // @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingColors.js
 // @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornPickpocketingColors.js
