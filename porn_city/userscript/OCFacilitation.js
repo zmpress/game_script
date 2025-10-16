@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         OCFacilitation
 // @namespace    https://greasyfork.org/users/[daluo]
-// @version      1.0.5.6
+// @version      1.0.5.7
 // @description  Make OC 2.0 easier for regular players
 // @description:zh-CN  使普通玩家oc2.0更简单和方便
 // @author       daluo
 // @match        https://www.torn.com/*
 // @run-at       document-start
 // @grant        GM_xmlhttpRequest
-// // @connect      *
+// @connect      *
 // @license      MIT
 // @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
 // @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCFacilitation.js
@@ -30,7 +30,7 @@
         USER_ID: '',
         API: {
             KEY: localStorage.getItem("APIKey") || DEFAULT_API_KEY,
-            BASE_URL: 'http://121.37.11.27:4321',
+            BASE_URL: 'http://8.137.145.92:24321',
             ENDPOINTS: {
                 CRIMES: '/faction/crimes',
             },
@@ -437,9 +437,13 @@
             // 获取并排序所有crime元素
             const sortedElements = Array.from(crimeListContainer.children)
                 .sort((a, b) => {
-                    const aLevel = parseInt(a.querySelector('.levelValue___TE4qC')?.textContent || '0');
-                    const bLevel = parseInt(b.querySelector('.levelValue___TE4qC')?.textContent || '0');
-                    return bLevel - aLevel;
+                    const aLevel = a.querySelector('.levelValue___TE4qC')?.textContent || '0';
+                    const aTitle = a.querySelector('.panelTitle___aoGuV')?.textContent || "AA"
+                    const aSortText = aLevel + "_" + aTitle.replace(/[^a-zA-Z]/g, '')
+                    const bLevel = b.querySelector('.levelValue___TE4qC')?.textContent || '0';
+                    const bTitle = b.querySelector('.panelTitle___aoGuV')?.textContent || "AA"
+                    const bSortText = bLevel + "_" + bTitle.replace(/[^a-zA-Z]/g, '')
+                    return bSortText.localeCompare(aSortText);
                 });
 
             // 重新添加排序后的元素
@@ -1402,9 +1406,11 @@
         const app = new OCFacilitation();
         const createStatusContainerInterval = setInterval(() => {
             if (app.createStatusContainer() !== null) {
+                console.log("状态容器创建成功");
                 app.initialize();
                 clearInterval(createStatusContainerInterval);
             }
+
         },300)
 
         // 页面卸载时清理资源
