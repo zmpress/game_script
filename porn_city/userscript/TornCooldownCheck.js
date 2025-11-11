@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn Cooldown check
 // @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCooldownCheck.js
-// @version      1.0.0.1
+// @version      1.0.0.2
 // @description  显示oc，drug，booster，medical剩余时间
 // @match        https://www.torn.com/*
 // @run-at       document-idle
@@ -46,9 +46,6 @@
     // 实用函数 (保持不变)
     // ====================================================================
 
-    /**
-     * 格式化剩余秒数。统一显示为小时和分钟，低于阈值时显示秒，小时不遗漏。
-     */
     function formatTime(seconds) {
         let s = Math.floor(seconds);
         if (s <= 0) return '0s';
@@ -125,7 +122,7 @@
     }
 
     // ====================================================================
-    // API Key UI (用于 Key 的输入和保存)
+    // API Key UI
     // ====================================================================
 
     function createInputUI(container) {
@@ -177,13 +174,13 @@
     }
 
     // ====================================================================
-    // 核心显示函数 (仅渲染逻辑依赖 CONFIG)
+    // 核心显示函数 (修改 OC 标签)
     // ====================================================================
 
     function createTimeDisplay(container, cooldowns, ocTime, isPlaceholder = false) {
         let wrap = document.getElementById('tm-cooldown-display');
         const isMobile = container.className.includes('user-information-mobile');
-        const API_KEY = localStorage.getItem(LOCAL_KEY); // 用于判断是否显示提示
+        const API_KEY = localStorage.getItem(LOCAL_KEY);
 
         // 1. 创建或获取占位符
         if (!wrap) {
@@ -191,7 +188,6 @@
             wrap.id = 'tm-cooldown-display';
             const inputWrap = document.getElementById('tm-extra-input-wrap');
             if (inputWrap) {
-                // 插入到 Key 输入 UI 之后
                 inputWrap.insertAdjacentElement('afterend', wrap);
             } else {
                 insertElement(container, wrap);
@@ -229,8 +225,9 @@
         wrap.innerHTML = '';
         wrap.style.minHeight = 'auto';
 
+        // 注意：这里 ocTime 现在包含 value 和 difficulty
         const liveCooldowns = { ...cooldowns };
-        const liveOcTime = ocTime ? { value: ocTime.value } : null;
+        const liveOcTime = ocTime ? { value: ocTime.value, difficulty: ocTime.difficulty } : null;
 
         if (wrap._timer) clearInterval(wrap._timer);
 
@@ -240,7 +237,6 @@
 
             // 渲染 Drug/Medical/Booster
             for (const key of ['drug', 'medical', 'booster']) {
-                // 仅在渲染时检查 CONFIG 开关
                 let shouldShow = false;
                 if (key === 'drug' && CONFIG.SHOW_DRUG) shouldShow = true;
                 if (key === 'medical' && CONFIG.SHOW_MEDICAL) shouldShow = true;
@@ -265,8 +261,8 @@
                 liveCooldowns[key] = Math.max(remaining - 1, 0);
             }
 
-            // 渲染 OC
-            if (liveOcTime && CONFIG.SHOW_OC) { // 仅在渲染时检查 CONFIG 开关
+            // 渲染 OC (修改标签以包含难度)
+            if (liveOcTime && CONFIG.SHOW_OC) {
                 let remainingOC = liveOcTime.value;
                 const formattedOCText = formatTime(remainingOC);
 
@@ -275,8 +271,12 @@
 
                 const timeOcHtml = formatTimeHtml(formattedOCText, finalOCColor);
 
+                // --- 核心修改：生成包含难度的标签 ---
+                const ocLabel = `oc(${liveOcTime.difficulty || '?' }):`;
+                // ---
+
                 const spanOC = document.createElement('span');
-                spanOC.innerHTML = `<span style="color: ${LABEL_COLOR};">oc:</span> ${timeOcHtml}`;
+                spanOC.innerHTML = `<span style="color: ${LABEL_COLOR};">${ocLabel}</span> ${timeOcHtml}`;
 
                 if (!isMobile) spanOC.style.display = 'block';
                 items.push(spanOC);
@@ -306,7 +306,7 @@
     }
 
     // ====================================================================
-    // 数据获取函数 (完全独立于渲染开关)
+    // 数据获取函数 (修改 fetchOC 以提取 difficulty)
     // ====================================================================
 
     function fetchCooldowns(key, callback) {
@@ -331,7 +331,6 @@
             } catch (e) {}
         }
 
-        // 如果缓存有效，则不重复请求
         if (cacheValid) return;
 
         fetch(`https://api.torn.com/user/?selections=cooldowns&key=${key}`, {
@@ -358,6 +357,7 @@
     }
 
     function fetchOC(key, callback) {
+        let defaultOcTime = null; // 默认值包含时间0和未知难度
         const cacheRaw = localStorage.getItem(OC_CACHE_KEY);
         let cacheValid = false;
 
@@ -365,15 +365,17 @@
             try {
                 const cache = JSON.parse(cacheRaw);
                 const elapsedSeconds = (Date.now() - cache._timestamp) / 1000;
+
                 if (elapsedSeconds < CONFIG.cacheDuration) {
                     const remainingOC = Math.max(cache.data.value - elapsedSeconds, 0);
-                    callback({ value: remainingOC });
+                    // 从缓存中恢复难度字段
+                    const cachedOcTime = { value: remainingOC, difficulty: cache.data.difficulty || '?' };
+                    callback(cachedOcTime);
                     cacheValid = true;
                 }
             } catch (e) {}
         }
 
-        // 如果缓存有效，则不重复请求
         if (cacheValid) return;
 
         fetch(`https://api.torn.com/v2/user/organizedcrime?key=${key}`, {
@@ -385,7 +387,7 @@
                 const oc = data.organizedCrime;
 
                 if (data.error || !oc) {
-                    if (!cacheValid) callback(null);
+                    if (!cacheValid) callback(defaultOcTime);
                     return;
                 }
 
@@ -393,11 +395,17 @@
                 let remaining = oc.ready_at - Math.floor(Date.now() / 1000) + emptySlots * 86400;
 
                 if (remaining < 0) remaining = 0;
-                const ocTime = { value: remaining };
+
+                // --- 核心修改：提取 difficulty ---
+                const difficulty = oc.difficulty || '?';
+                const ocTime = { value: remaining, difficulty: difficulty };
+                // ---
+
+                // 缓存时也保存 difficulty
                 localStorage.setItem(OC_CACHE_KEY, JSON.stringify({_timestamp: Date.now(), data: ocTime}));
                 if (!cacheValid) callback(ocTime);
             })
-            .catch(() => { if (!cacheValid) callback(null); });
+            .catch(() => { if (!cacheValid) callback(defaultOcTime); });
     }
 
     // ====================================================================
@@ -422,14 +430,11 @@
         if (!savedKey) {
             createInputUI(container);
         } else {
-            // 确保 Key 输入 UI 在第一次加载后移除
             const inputWrap = document.getElementById('tm-extra-input-wrap');
             if (inputWrap) inputWrap.remove();
 
-            // 立即创建占位符
             createTimeDisplay(container, null, null, true);
 
-            // 异步获取数据并填充占位符
             fetchCooldowns(savedKey, (cooldowns) => {
                 fetchOC(savedKey, (ocTime) => {
                     createTimeDisplay(container, cooldowns, ocTime, false);
