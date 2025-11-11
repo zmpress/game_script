@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn Cooldown check
 // @namespace    http://tampermonkey.net/
-// @version      2.9
+// @version      3.2 // 修正了 API 返回 null 或错误的缓存逻辑
 // @description  Torn Cooldowns & Organized Crime 倒计时显示到秒，PC/移动端分别优化，PC换行，手机版一行并左对齐，PC输入框更窄，按钮紧凑
 // @match        *://*/*
 // @run-at       document-idle
@@ -10,19 +10,27 @@
 
 (function () {
     const LOCAL_KEY = 'torn_cooldown_api_key';
-    const CACHE_KEY = 'torn_cooldown_cache';
-    const OC_CACHE_KEY = 'torn_oc_cache';
+    const CACHE_KEY = 'torn_cooldown_cache'; // 用于 drug/medical/booster 冷却时间
+    const OC_CACHE_KEY = 'torn_oc_cache'; // 用于 Organized Crime 冷却时间
 
     const CONFIG = {
-        cacheDuration: 60,
+        cacheDuration: 60, // 缓存有效期 60 秒
         redWhenLow: true,
         redThresholdMinutes: 5,
         showSecondsThresholdMinutes: 5,
     };
 
+    /**
+     * 格式化剩余秒数。如果是 0 或负数，显示 '0s'。
+     * @param {number} seconds - 剩余秒数。
+     * @returns {string} 格式化的时间字符串。
+     */
     function formatTime(seconds) {
         let s = Math.floor(seconds);
+
+        // 如果剩余秒数小于或等于 0，直接返回 '0s'
         if (s <= 0) return '0s';
+
         const days = Math.floor(s / 86400); s %= 86400;
         const hours = Math.floor(s / 3600); s %= 3600;
         const minutes = Math.floor(s / 60); s %= 60;
@@ -30,6 +38,7 @@
         const showSecondsThreshold = CONFIG.showSecondsThresholdMinutes * 60;
 
         if (seconds <= showSecondsThreshold) {
+            // 在阈值内显示到秒
             return `${minutes}m${s}s`;
         } else if (days > 0) {
             return `${days}d${hours}h${minutes}m`;
@@ -50,6 +59,8 @@
 
     function createInputUI(container) {
         if (!container) return;
+        if (document.getElementById('tm-extra-input-wrap')) return;
+
         const isMobile = container.className.startsWith('user-information-mobile');
         const existingHr = findDelimiter(container);
 
@@ -66,11 +77,11 @@
         input.placeholder = '请输入Minimal API Key';
         input.style.flex = isMobile ? '1' : 'none';
         input.style.padding = '4px 6px';
-        input.style.width = isMobile ? 'auto' : '120px'; // PC更窄
+        input.style.width = isMobile ? 'auto' : '120px';
 
         const btn = document.createElement('button');
         btn.textContent = '确定';
-        btn.style.padding = '4px 6px'; // 更紧凑
+        btn.style.padding = '4px 6px';
         btn.style.border = '1px solid #333';
         btn.style.width = 'auto';
         btn.style.minWidth = '30px';
@@ -100,6 +111,8 @@
     }
 
     function createTimeDisplay(container, cooldowns, ocTime) {
+        if (document.getElementById('tm-cooldown-display')) return;
+
         const wrap = document.createElement('div');
         wrap.id = 'tm-cooldown-display';
 
@@ -121,38 +134,57 @@
             wrap.style.lineHeight = '1.6';
         }
 
+        const liveCooldowns = { ...cooldowns };
+        const liveOcTime = ocTime ? { value: ocTime.value } : null;
+
         function render() {
             wrap.innerHTML = '';
             const items = [];
+
+            // 渲染 Drug/Medical/Booster
             for (const key of ['drug', 'medical', 'booster']) {
-                if (!(key in cooldowns)) continue;
-                const remaining = cooldowns[key];
+                if (!(key in liveCooldowns)) continue;
+                let remaining = liveCooldowns[key];
                 const formatted = formatTime(remaining);
-                const red = CONFIG.redWhenLow && remaining < CONFIG.redThresholdMinutes * 60;
+                // 仅在剩余时间大于 0 时才应用红色阈值判断
+                const red = CONFIG.redWhenLow && remaining > 0 && remaining < CONFIG.redThresholdMinutes * 60;
+
                 const span = document.createElement('span');
                 span.textContent = `${key}: ${formatted}`;
                 if (red) span.style.color = 'red';
                 if (!isMobile) span.style.display = 'block';
                 items.push(span);
-                cooldowns[key] = Math.max(remaining - 1, 0);
+
+                liveCooldowns[key] = Math.max(remaining - 1, 0);
             }
-            if (ocTime) {
-                const remainingOC = Math.max(ocTime.value - 1, 0);
+
+            // 渲染 OC
+            if (liveOcTime) {
+                let remainingOC = liveOcTime.value;
                 const formattedOC = formatTime(remainingOC);
-                const redOC = CONFIG.redWhenLow && remainingOC < CONFIG.redThresholdMinutes * 60;
+                const redOC = CONFIG.redWhenLow && remainingOC > 0 && remainingOC < CONFIG.redThresholdMinutes * 60;
+
                 const spanOC = document.createElement('span');
                 spanOC.textContent = `OC: ${formattedOC}`;
                 if (redOC) spanOC.style.color = 'red';
                 if (!isMobile) spanOC.style.display = 'block';
                 items.push(spanOC);
-                ocTime.value = remainingOC;
+
+                liveOcTime.value = Math.max(remainingOC - 1, 0);
             }
+
             items.forEach(item => wrap.appendChild(item));
         }
 
         render();
         setInterval(render, 1000);
-        container.appendChild(wrap);
+
+        const existingHr = findDelimiter(container);
+        if (existingHr) {
+            existingHr.insertAdjacentElement('afterend', wrap);
+        } else {
+            container.appendChild(wrap);
+        }
 
         if (!isMobile) {
             const hrBelow = document.createElement('hr');
@@ -161,6 +193,84 @@
         }
     }
 
+
+    /**
+     * 通过 API 获取冷却时间 (drugcd, medicalcd)，并处理 60 秒缓存。
+     * @param {string} key - API Key。
+     * @param {function(Object|null)} callback - 回调函数。
+     */
+    function fetchCooldowns(key, callback) {
+        const defaultCooldowns = { drug: 0, medical: 0, booster: 0 };
+        const cacheRaw = localStorage.getItem(CACHE_KEY);
+
+        if (cacheRaw) {
+            try {
+                const cache = JSON.parse(cacheRaw);
+                // 确保缓存数据结构是有效的，并且未过期
+                if (cache.data && (typeof cache.data.drug === 'number') && (Date.now() - cache._timestamp < CONFIG.cacheDuration * 1000)) {
+                    callback(cache.data); // 使用缓存数据
+                    return;
+                }
+            } catch (e) {
+                console.error("Error parsing Cooldowns cache:", e);
+                // 缓存解析失败，继续API请求
+            }
+        }
+
+        GM_xmlhttpRequest({
+            method: 'GET',
+            url: `https://api.torn.com/user/?selections=cooldowns&key=${key}`,
+            headers: { accept: 'application/json' },
+            onload: (res) => {
+                try {
+                    const data = JSON.parse(res.responseText);
+
+                    // 1. API 错误检查
+                    if (data.error) {
+                        console.error('Torn API Error (Cooldowns):', data.error);
+                        callback(defaultCooldowns);
+                        return;
+                    }
+                    if (!data.cooldowns) {
+                        console.error('Torn API Error (Cooldowns): Missing cooldowns data', data);
+                        callback(defaultCooldowns);
+                        return;
+                    }
+
+                    // 2. 确保 API 返回的值是数字，否则默认为 0
+                    const drugTimestamp = data.cooldowns.drug || 0;
+                    const medicalTimestamp = data.cooldowns.medical || 0;
+                    const boosterTimestamp = data.cooldowns.booster || 0;
+
+                    // console.log(data)
+
+                    const cooldowns = {
+                        // 确保计算结果不小于 0
+                        drug: Math.max(drugTimestamp, 0),
+                        medical: Math.max(medicalTimestamp, 0),
+                        booster: Math.max(boosterTimestamp, 0)
+                    };
+
+                    localStorage.setItem(CACHE_KEY, JSON.stringify({ _timestamp: Date.now(), data: cooldowns }));
+                    callback(cooldowns);
+
+                } catch(e) {
+                    console.error('Error parsing Cooldowns response or calculating:', e);
+                    callback(defaultCooldowns); // 解析失败返回默认值
+                }
+            },
+            onerror: () => {
+                console.error('GM_xmlhttpRequest failed for Cooldowns.');
+                callback(defaultCooldowns); // 网络请求失败返回默认值
+            }
+        });
+    }
+
+    /**
+     * 通过 API 获取 OC 冷却时间，并处理 60 秒缓存。
+     * @param {string} key - API Key。
+     * @param {function(Object|null)} callback - 回调函数。
+     */
     function fetchOC(key, callback) {
         const cacheRaw = localStorage.getItem(OC_CACHE_KEY);
         if (cacheRaw) {
@@ -181,14 +291,23 @@
                 try {
                     const data = JSON.parse(res.responseText);
                     const oc = data.organizedCrime;
-                    if (!oc) { callback(null); return; }
+
+                    if (data.error || !oc) {
+                        console.error('Torn API Error (OC):', data.error || 'Missing OC data');
+                        callback(null); // OC 冷却失败不影响 Cooldowns 显示，返回 null
+                        return;
+                    }
+
+                    // OC 计算逻辑 (包含空槽位惩罚)
                     let emptySlots = oc.slots.filter(s => !s.user).length;
                     let remaining = oc.ready_at - Math.floor(Date.now() / 1000) + emptySlots * 86400;
+
                     if (remaining < 0) remaining = 0;
                     const ocTime = { value: remaining };
                     localStorage.setItem(OC_CACHE_KEY, JSON.stringify({_timestamp: Date.now(), data: ocTime}));
                     callback(ocTime);
                 } catch(e) {
+                    console.error('Error fetching OC:', e);
                     callback(null);
                 }
             },
@@ -212,23 +331,17 @@
         if (!savedKey) {
             createInputUI(container);
         } else {
-            const cacheRaw = localStorage.getItem(CACHE_KEY);
-            let cooldowns = null;
-            if (cacheRaw) {
-                try {
-                    const cache = JSON.parse(cacheRaw);
-                    if (Date.now() - cache._timestamp < CONFIG.cacheDuration * 1000) {
-                        cooldowns = cache.data;
-                    }
-                } catch (e) {}
-            }
-            if (!cooldowns) {
-                cooldowns = { drug: 10527, medical: 14597, booster: 0 };
-                localStorage.setItem(CACHE_KEY, JSON.stringify({ data: cooldowns, _timestamp: Date.now() }));
-            }
+            // 1. 获取 Cooldowns 数据
+            fetchCooldowns(savedKey, (cooldowns) => {
+                // 如果 fetchCooldowns 内部处理失败，它会返回 { drug: 0, medical: 0, booster: 0 }
+                // 所以 finalCooldowns 永远是一个对象
+                const finalCooldowns = cooldowns;
 
-            fetchOC(savedKey, (ocTime) => {
-                createTimeDisplay(container, cooldowns, ocTime);
+                // 2. 获取 Organized Crime (OC) 数据
+                fetchOC(savedKey, (ocTime) => {
+                    // 3. 创建时间显示 UI
+                    createTimeDisplay(container, finalCooldowns, ocTime);
+                });
             });
         }
 
