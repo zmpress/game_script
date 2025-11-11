@@ -1,12 +1,15 @@
 // ==UserScript==
 // @name         Torn Cooldown check
-// @namespace    http://tampermonkey.net/
-// @version      3.7 // 修正移动端容器查找和插入逻辑，确保显示
-// @description  Torn Cooldowns & Organized Crime 倒计时显示到秒，PC/移动端分别优化，PC换行，手机版一行并左对齐，PC输入框更窄，按钮紧凑
-// @match        *://*/*
+// @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCooldownCheck.js
+// @version      1.0.0.1
+// @description  显示oc，drug，booster，medical剩余时间
+// @match        https://www.torn.com/*
 // @run-at       document-idle
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
+// @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCooldownCheck.js
+// @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCooldownCheck.js
+
 
 (function () {
     const LOCAL_KEY = 'torn_cooldown_api_key';
