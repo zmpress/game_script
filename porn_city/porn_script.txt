@@ -14,7 +14,7 @@ https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/
 
 1-2.显示oc，drug，booster，medical剩余时间
 
-https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCooldownCheck.js
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
 
 2.Torn 简中汉化脚本(优先选第二个，更推荐直接网页翻译)
 

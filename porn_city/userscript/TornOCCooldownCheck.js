@@ -1,14 +1,14 @@
 // ==UserScript==
-// @name         Torn Cooldown check
-// @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCooldownCheck.js
+// @name         Torn OC and Cooldown check
+// @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
 // @version      1.0.0.2
 // @description  显示oc，drug，booster，medical剩余时间
 // @match        https://www.torn.com/*
 // @run-at       document-idle
 // @grant        GM_xmlhttpRequest
 // ==/UserScript==
-// @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCooldownCheck.js
-// @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornCooldownCheck.js
+// @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
+// @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
 
 
 (function () {
