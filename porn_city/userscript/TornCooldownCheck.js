@@ -39,13 +39,13 @@
 
         if (seconds <= showSecondsThreshold) {
             // 在阈值内显示到秒
-            return `${minutes}m${s}s`;
+            return ` ${minutes}m${s}s`;
         } else if (days > 0) {
-            return `${days}d${hours}h${minutes}m`;
+            return ` ${days}d${hours}h${minutes}m`;
         } else if (hours > 0) {
-            return `${hours}h${minutes}m`;
+            return ` ${hours}h${minutes}m`;
         } else {
-            return `${minutes}m`;
+            return ` ${minutes}m`;
         }
     }
 
@@ -118,6 +118,16 @@
 
         const isMobile = container.className.startsWith('user-information-mobile');
 
+        // --- 核心样式调整 ---
+        const baseFontSize = isMobile ? '13px' : '15px';
+        const labelColor = '#999'; // 标签颜色（灰色）
+
+        // 核心修正: 使用饱和度更高的淡蓝色 (#4A85C2)
+        const timeValueColor = '#4A85C2';
+        // 核心修正: 保持细体
+        const timeFontWeight = '300';
+        // ---
+
         if (isMobile) {
             wrap.style.display = 'flex';
             wrap.style.flexDirection = 'row';
@@ -127,11 +137,12 @@
             wrap.style.height = '1em';
             wrap.style.alignItems = 'center';
             wrap.style.paddingLeft = '10px';
+            wrap.style.fontSize = baseFontSize;
         } else {
             wrap.style.whiteSpace = 'pre-line';
             wrap.style.margin = '6px 0';
-            wrap.style.fontSize = '14px';
-            wrap.style.lineHeight = '1.6';
+            wrap.style.fontSize = baseFontSize;
+            wrap.style.lineHeight = '1.8';
         }
 
         const liveCooldowns = { ...cooldowns };
@@ -146,17 +157,20 @@
                 if (!(key in liveCooldowns)) continue;
                 let remaining = liveCooldowns[key];
                 const formatted = formatTime(remaining);
-                // 仅在剩余时间大于 0 时才应用红色阈值判断
-                const red = CONFIG.redWhenLow && remaining >= 0 && remaining < CONFIG.redThresholdMinutes * 60;
+
+                const red = CONFIG.redWhenLow && remaining > 0 && remaining < CONFIG.redThresholdMinutes * 60;
 
                 const span = document.createElement('span');
-                span.textContent = `${key}: ${formatted}`;
 
-                // 核心修正：使用 !important 提高样式优先级
+                // 默认样式：标签灰色，时间值淡蓝色（细体）
+                let timeHtml = `<span style="color: ${timeValueColor}; font-weight: ${timeFontWeight};">${formatted}</span>`;
+
+                // 修正：如果标红，将时间值强制设为红色，并保持细体
                 if (red) {
-                    span.style.color = 'red';
-                    span.style.setProperty('color', 'red', 'important');
+                    timeHtml = `<span style="color: red !important; font-weight: ${timeFontWeight};">${formatted}</span>`;
                 }
+
+                span.innerHTML = `<span style="color: ${labelColor};">${key}:</span> ${timeHtml}`;
 
                 if (!isMobile) span.style.display = 'block';
                 items.push(span);
@@ -168,16 +182,19 @@
             if (liveOcTime) {
                 let remainingOC = liveOcTime.value;
                 const formattedOC = formatTime(remainingOC);
-                const redOC = CONFIG.redWhenLow && remainingOC >= 0 && remainingOC < CONFIG.redThresholdMinutes * 60;
+                const redOC = CONFIG.redWhenLow && remainingOC > 0 && remainingOC < CONFIG.redThresholdMinutes * 60;
 
                 const spanOC = document.createElement('span');
-                spanOC.textContent = `OC: ${formattedOC}`;
 
-                // 核心修正：使用 !important 提高样式优先级
+                // 默认样式：标签灰色，时间值淡蓝色（细体）
+                let timeOcHtml = `<span style="color: ${timeValueColor}; font-weight: ${timeFontWeight};">${formattedOC}</span>`;
+
+                // 修正：如果标红，将时间值强制设为红色，并保持细体
                 if (redOC) {
-                    spanOC.style.color = 'red';
-                    spanOC.style.setProperty('color', 'red', 'important');
+                    timeOcHtml = `<span style="color: red !important; font-weight: ${timeFontWeight};">${formattedOC}</span>`;
                 }
+
+                spanOC.innerHTML = `<span style="color: ${labelColor};">OC:</span> ${timeOcHtml}`;
 
                 if (!isMobile) spanOC.style.display = 'block';
                 items.push(spanOC);
