@@ -194,7 +194,7 @@
                     timeOcHtml = `<span style="color: red !important; font-weight: ${timeFontWeight};">${formattedOC}</span>`;
                 }
 
-                spanOC.innerHTML = `<span style="color: ${labelColor};">OC:</span> ${timeOcHtml}`;
+                spanOC.innerHTML = `<span style="color: ${labelColor};">oc:</span> ${timeOcHtml}`;
 
                 if (!isMobile) spanOC.style.display = 'block';
                 items.push(spanOC);
