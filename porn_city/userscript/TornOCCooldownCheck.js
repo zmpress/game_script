@@ -1,15 +1,14 @@
 // ==UserScript==
 // @name         Torn OC and Cooldown check
 // @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
-// @version      1.0.0.2
+// @version      1.0.0.3
 // @description  显示oc，drug，booster，medical剩余时间
 // @match        https://www.torn.com/*
 // @run-at       document-idle
 // @grant        GM_xmlhttpRequest
-// ==/UserScript==
 // @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
 // @downloadURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
-
+// ==/UserScript==
 
 (function () {
     const LOCAL_KEY = 'torn_cooldown_api_key';
@@ -247,7 +246,7 @@
                 let remaining = liveCooldowns[key];
 
                 const formattedText = formatTime(remaining);
-                const red = CONFIG.redWhenLow && remaining > 0 && remaining < CONFIG.redThresholdMinutes * 60;
+                const red = CONFIG.redWhenLow && remaining >= 0 && remaining < CONFIG.redThresholdMinutes * 60;
                 const finalColor = red ? 'red !important' : TIME_VALUE_COLOR;
 
                 const timeHtml = formatTimeHtml(formattedText, finalColor);
@@ -266,7 +265,7 @@
                 let remainingOC = liveOcTime.value;
                 const formattedOCText = formatTime(remainingOC);
 
-                const redOC = CONFIG.redWhenLow && remainingOC > 0 && remainingOC < CONFIG.redThresholdMinutes * 60;
+                const redOC = CONFIG.redWhenLow && remainingOC >= 0 && remainingOC < CONFIG.redThresholdMinutes * 60;
                 const finalOCColor = redOC ? 'red !important' : TIME_VALUE_COLOR;
 
                 const timeOcHtml = formatTimeHtml(formattedOCText, finalOCColor);
