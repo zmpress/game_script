@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn Cooldown check
 // @namespace    http://tampermonkey.net/
-// @version      3.3 // 修正了读取缓存时未减去时间差的问题
+// @version      3.4 // 修正了读取缓存时未减去时间差的问题 & 提高标红样式优先级
 // @description  Torn Cooldowns & Organized Crime 倒计时显示到秒，PC/移动端分别优化，PC换行，手机版一行并左对齐，PC输入框更窄，按钮紧凑
 // @match        *://*/*
 // @run-at       document-idle
@@ -147,11 +147,17 @@
                 let remaining = liveCooldowns[key];
                 const formatted = formatTime(remaining);
                 // 仅在剩余时间大于 0 时才应用红色阈值判断
-                const red = CONFIG.redWhenLow && remaining > 0 && remaining < CONFIG.redThresholdMinutes * 60;
+                const red = CONFIG.redWhenLow && remaining >= 0 && remaining < CONFIG.redThresholdMinutes * 60;
 
                 const span = document.createElement('span');
                 span.textContent = `${key}: ${formatted}`;
-                if (red) span.style.color = 'red';
+
+                // 核心修正：使用 !important 提高样式优先级
+                if (red) {
+                    span.style.color = 'red';
+                    span.style.setProperty('color', 'red', 'important');
+                }
+
                 if (!isMobile) span.style.display = 'block';
                 items.push(span);
 
@@ -162,11 +168,17 @@
             if (liveOcTime) {
                 let remainingOC = liveOcTime.value;
                 const formattedOC = formatTime(remainingOC);
-                const redOC = CONFIG.redWhenLow && remainingOC > 0 && remainingOC < CONFIG.redThresholdMinutes * 60;
+                const redOC = CONFIG.redWhenLow && remainingOC >= 0 && remainingOC < CONFIG.redThresholdMinutes * 60;
 
                 const spanOC = document.createElement('span');
                 spanOC.textContent = `OC: ${formattedOC}`;
-                if (redOC) spanOC.style.color = 'red';
+
+                // 核心修正：使用 !important 提高样式优先级
+                if (redOC) {
+                    spanOC.style.color = 'red';
+                    spanOC.style.setProperty('color', 'red', 'important');
+                }
+
                 if (!isMobile) spanOC.style.display = 'block';
                 items.push(spanOC);
 
@@ -208,8 +220,8 @@
                 const cache = JSON.parse(cacheRaw);
                 const elapsedSeconds = (Date.now() - cache._timestamp) / 1000;
 
-                // 确保缓存数据结构是有效的，并且未过期
-                if (cache.data && (typeof cache.data.drug === 'number') && (elapsedSeconds < CONFIG.cacheDuration * 1000)) {
+                // 检查缓存是否有效且未过期
+                if (cache.data && (typeof cache.data.drug === 'number') && (elapsedSeconds < CONFIG.cacheDuration)) {
 
                     // 修正：从缓存时间中减去流逝的时间
                     const correctedCooldowns = {
@@ -235,7 +247,6 @@
                 try {
                     const data = JSON.parse(res.responseText);
 
-                    // 1. API 错误检查
                     if (data.error) {
                         console.error('Torn API Error (Cooldowns):', data.error);
                         callback(defaultCooldowns);
@@ -247,13 +258,12 @@
                         return;
                     }
 
-                    // 2. 确保 API 返回的值是数字（使用用户提供的键名 drug, medical, booster）
+                    // 假设 API 返回的就是剩余秒数，确保计算结果不小于 0
                     const drugRemaining = data.cooldowns.drug || 0;
                     const medicalRemaining = data.cooldowns.medical || 0;
                     const boosterRemaining = data.cooldowns.booster || 0;
 
                     const cooldowns = {
-                        // 假设 API 返回的就是剩余秒数，确保计算结果不小于 0
                         drug: Math.max(drugRemaining, 0),
                         medical: Math.max(medicalRemaining, 0),
                         booster: Math.max(boosterRemaining, 0)
@@ -264,12 +274,12 @@
 
                 } catch(e) {
                     console.error('Error parsing Cooldowns response or calculating:', e);
-                    callback(defaultCooldowns); // 解析失败返回默认值
+                    callback(defaultCooldowns);
                 }
             },
             onerror: () => {
                 console.error('GM_xmlhttpRequest failed for Cooldowns.');
-                callback(defaultCooldowns); // 网络请求失败返回默认值
+                callback(defaultCooldowns);
             }
         });
     }
@@ -286,7 +296,7 @@
                 const cache = JSON.parse(cacheRaw);
                 const elapsedSeconds = (Date.now() - cache._timestamp) / 1000;
 
-                if (elapsedSeconds < CONFIG.cacheDuration * 1000) {
+                if (elapsedSeconds < CONFIG.cacheDuration) {
 
                     // 修正：从缓存时间中减去流逝的时间
                     const remainingOC = Math.max(cache.data.value - elapsedSeconds, 0);
