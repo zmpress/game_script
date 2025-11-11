@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn Cooldown check
 // @namespace    http://tampermonkey.net/
-// @version      3.2 // 修正了 API 返回 null 或错误的缓存逻辑
+// @version      3.3 // 修正了读取缓存时未减去时间差的问题
 // @description  Torn Cooldowns & Organized Crime 倒计时显示到秒，PC/移动端分别优化，PC换行，手机版一行并左对齐，PC输入框更窄，按钮紧凑
 // @match        *://*/*
 // @run-at       document-idle
@@ -206,9 +206,19 @@
         if (cacheRaw) {
             try {
                 const cache = JSON.parse(cacheRaw);
+                const elapsedSeconds = (Date.now() - cache._timestamp) / 1000;
+
                 // 确保缓存数据结构是有效的，并且未过期
-                if (cache.data && (typeof cache.data.drug === 'number') && (Date.now() - cache._timestamp < CONFIG.cacheDuration * 1000)) {
-                    callback(cache.data); // 使用缓存数据
+                if (cache.data && (typeof cache.data.drug === 'number') && (elapsedSeconds < CONFIG.cacheDuration * 1000)) {
+
+                    // 修正：从缓存时间中减去流逝的时间
+                    const correctedCooldowns = {
+                        drug: Math.max(cache.data.drug - elapsedSeconds, 0),
+                        medical: Math.max(cache.data.medical - elapsedSeconds, 0),
+                        booster: Math.max(cache.data.booster - elapsedSeconds, 0)
+                    };
+
+                    callback(correctedCooldowns); // 使用校正后的数据
                     return;
                 }
             } catch (e) {
@@ -237,18 +247,16 @@
                         return;
                     }
 
-                    // 2. 确保 API 返回的值是数字，否则默认为 0
-                    const drugTimestamp = data.cooldowns.drug || 0;
-                    const medicalTimestamp = data.cooldowns.medical || 0;
-                    const boosterTimestamp = data.cooldowns.booster || 0;
-
-                    // console.log(data)
+                    // 2. 确保 API 返回的值是数字（使用用户提供的键名 drug, medical, booster）
+                    const drugRemaining = data.cooldowns.drug || 0;
+                    const medicalRemaining = data.cooldowns.medical || 0;
+                    const boosterRemaining = data.cooldowns.booster || 0;
 
                     const cooldowns = {
-                        // 确保计算结果不小于 0
-                        drug: Math.max(drugTimestamp, 0),
-                        medical: Math.max(medicalTimestamp, 0),
-                        booster: Math.max(boosterTimestamp, 0)
+                        // 假设 API 返回的就是剩余秒数，确保计算结果不小于 0
+                        drug: Math.max(drugRemaining, 0),
+                        medical: Math.max(medicalRemaining, 0),
+                        booster: Math.max(boosterRemaining, 0)
                     };
 
                     localStorage.setItem(CACHE_KEY, JSON.stringify({ _timestamp: Date.now(), data: cooldowns }));
@@ -276,8 +284,16 @@
         if (cacheRaw) {
             try {
                 const cache = JSON.parse(cacheRaw);
-                if (Date.now() - cache._timestamp < CONFIG.cacheDuration * 1000) {
-                    callback(cache.data);
+                const elapsedSeconds = (Date.now() - cache._timestamp) / 1000;
+
+                if (elapsedSeconds < CONFIG.cacheDuration * 1000) {
+
+                    // 修正：从缓存时间中减去流逝的时间
+                    const remainingOC = Math.max(cache.data.value - elapsedSeconds, 0);
+
+                    const correctedOcTime = { value: remainingOC };
+
+                    callback(correctedOcTime);
                     return;
                 }
             } catch (e) {}
@@ -294,7 +310,7 @@
 
                     if (data.error || !oc) {
                         console.error('Torn API Error (OC):', data.error || 'Missing OC data');
-                        callback(null); // OC 冷却失败不影响 Cooldowns 显示，返回 null
+                        callback(null);
                         return;
                     }
 
@@ -333,8 +349,6 @@
         } else {
             // 1. 获取 Cooldowns 数据
             fetchCooldowns(savedKey, (cooldowns) => {
-                // 如果 fetchCooldowns 内部处理失败，它会返回 { drug: 0, medical: 0, booster: 0 }
-                // 所以 finalCooldowns 永远是一个对象
                 const finalCooldowns = cooldowns;
 
                 // 2. 获取 Organized Crime (OC) 数据
