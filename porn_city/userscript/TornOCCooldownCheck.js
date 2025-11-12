@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Torn OC and Cooldown check
 // @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
-// @version      1.0.0.5
-// @description  显示oc，drug，booster，medical剩余时间，并检查refills。
+// @version      1.0.0.6
+// @description  显示oc，drug，booster，medical剩余时间，并检查refills。在OC页面添加排序和筛选功能，支持移动端。
 // @match        https://www.torn.com/*
 // @run-at       document-idle
 // @grant        GM_xmlhttpRequest
@@ -48,6 +48,19 @@
         DEBUG_COLOR_BJT: '#90EE90',
     };
 
+    // ====================================================================
+    // 链接配置 (新增)
+    // ====================================================================
+    const NAVIGATION_LINKS = {
+        drug: 'https://www.torn.com/item.php',
+        medical: 'https://www.torn.com/factions.php?step=your#/tab=armoury&start=0&sub=medical',
+        booster: 'https://www.torn.com/factions.php?step=your#/tab=armoury&start=0&sub=boosters',
+        oc: 'https://www.torn.com/factions.php?step=your#/tab=crimes',
+        refill: 'https://www.torn.com/page.php?sid=points',
+    };
+    // ====================================================================
+
+
     // --- 样式配置 ---
     const BASE_FONT_SIZE_MOBILE = '11px';
     const PC_FALLBACK_FONT_SIZE = '12px';
@@ -81,7 +94,7 @@
     // ---
 
     // ====================================================================
-    // 实用函数
+    // 实用函数 (保持原样)
     // ====================================================================
 
     function getTargetStyles() {
@@ -245,8 +258,9 @@
         return timeHtml;
     }
 
+    // ... (API Key UI 和 Cooldown Display 函数保持原样) ...
     // ====================================================================
-    // API Key UI
+    // API Key UI (保持原样)
     // ====================================================================
 
     /**
@@ -322,7 +336,7 @@
     }
 
     // ====================================================================
-    // 核心显示函数 (统一结构)
+    // 核心显示函数 (保持原样)
     // ====================================================================
 
     /**
@@ -331,73 +345,71 @@
     function getOrCreateSection(container, key, label, isEnabled, ttIntegration, isMobile) {
         const id = `tm-cd-${key}`;
         let section = document.getElementById(id);
+        const linkTarget = NAVIGATION_LINKS[key] || '#'; // 获取链接目标
 
         if (isEnabled) {
             // 检查元素是否存在且父级是否正确
-            if (!section || section.parentElement !== container) {
-                if (section) section.remove();
-
-                section = document.createElement('section');
-                section.id = id;
-
-                // 默认字体大小
-                let finalFontSize = isMobile ? BASE_FONT_SIZE_MOBILE : (PC_STYLE_LOADED ? PC_BASE_FONT_SIZE : PC_FALLBACK_FONT_SIZE);
-                section.style.fontSize = finalFontSize;
-
-                const labelWeight = isMobile ? 'bold' : PC_LABEL_FONT_WEIGHT;
-
-
-                if (ttIntegration) {
-                    section.style.order = TT_ORDER_MAP[key];
-                    section.style.display = 'flex';
-                    section.style.lineHeight = PC_BASE_LINE_HEIGHT; // TT 使用继承或基础行高
-                    // TT 使用 <a> 标签作为 label
-                    const titleLink = document.createElement('a');
-                    titleLink.classList.add('title');
-                    titleLink.href = '#';
-
-                    // v1.0.4.4: Suppress 'Refill:' label on mobile
-                    if (isMobile && key === 'refill') {
-                        titleLink.textContent = '';
-                    } else {
-                        titleLink.textContent = `${label}: `;
-                    }
-
-                    titleLink.style.fontWeight = labelWeight;
-                    section.appendChild(titleLink);
+            if (section) {
+                // 如果父级不正确，则移除并重建
+                if (section.parentElement !== container) {
+                    section.remove();
+                    section = null;
                 } else {
-                    // Non-TT 模式：应用样式
-                    section.style.display = isMobile ? 'flex' : 'block'; // Mobile section is flex
-
-                    // v1.0.4.3: 移动端更紧凑的间距和垂直居中
-                    if (isMobile) {
-                        section.style.margin = '0';
-                        section.style.lineHeight = '1.0';
-                        section.style.alignItems = 'center'; // 垂直居中
-                    } else {
-                        section.style.margin = NON_TT_COMPACT_MARGIN;
-                        section.style.lineHeight = NON_TT_COMPACT_LINE_HEIGHT;
-                    }
-
-                    // Non-TT 使用 <span> 标签作为 label
-                    const titleSpan = document.createElement('span');
-                    titleSpan.classList.add('title');
-
-                    // v1.0.4.4: Suppress 'Refill:' label on mobile
-                    if (isMobile && key === 'refill') {
-                        titleSpan.textContent = '';
-                    } else {
-                        titleSpan.textContent = `${label}: `;
-                    }
-
-                    titleSpan.style.fontWeight = labelWeight;
-                    section.appendChild(titleSpan);
+                    // 如果存在且父级正确，直接返回
+                    section.style.display = ttIntegration ? 'flex' : (isMobile ? 'flex' : 'block');
+                    return section;
                 }
-
-                container.appendChild(section);
             }
-            // 确保启用的元素是可见的
-            section.style.display = ttIntegration ? 'flex' : (isMobile ? 'flex' : 'block');
+
+            // 创建新的 section
+            section = document.createElement('section');
+            section.id = id;
+
+            // 默认字体大小
+            let finalFontSize = isMobile ? BASE_FONT_SIZE_MOBILE : (PC_STYLE_LOADED ? PC_BASE_FONT_SIZE : PC_FALLBACK_FONT_SIZE);
+            section.style.fontSize = finalFontSize;
+
+            const labelWeight = isMobile ? 'bold' : PC_LABEL_FONT_WEIGHT;
+
+            // --- 关键修改：统一使用 <a> 标签作为标题链接 ---
+            const titleLink = document.createElement('a');
+            titleLink.classList.add('title');
+            titleLink.href = linkTarget;
+            titleLink.style.textDecoration = 'none'; // 确保链接没有下划线
+            titleLink.style.color = 'inherit'; // 继承颜色
+
+            // v1.0.4.4: Suppress 'Refill:' label on mobile
+            if (isMobile && key === 'refill') {
+                titleLink.textContent = '';
+            } else {
+                titleLink.textContent = `${label}: `;
+            }
+            titleLink.style.fontWeight = labelWeight;
+            section.appendChild(titleLink);
+            // --- 结束关键修改 ---
+
+
+            if (ttIntegration) {
+                section.style.order = TT_ORDER_MAP[key];
+                section.style.display = 'flex';
+                section.style.lineHeight = PC_BASE_LINE_HEIGHT; // TT 使用继承或基础行高
+            } else {
+                // Non-TT 模式：应用样式
+                section.style.display = isMobile ? 'flex' : 'block'; // Mobile section is flex
+
+                // v1.0.4.3: 移动端更紧凑的间距和垂直居中
+                if (isMobile) {
+                    section.style.margin = '0';
+                    section.style.lineHeight = '1.0';
+                    section.style.alignItems = 'center'; // 垂直居中
+                } else {
+                    section.style.margin = NON_TT_COMPACT_MARGIN;
+                    section.style.lineHeight = NON_TT_COMPACT_LINE_HEIGHT;
+                }
+            }
+
+            container.appendChild(section);
+
         } else {
             // 如果功能关闭，则隐藏元素
             if (section) section.style.display = 'none';
@@ -453,9 +465,11 @@
                 wrapper.style.display = 'flex';
                 wrapper.style.flexDirection = 'row';
                 wrapper.style.flexWrap = 'wrap';
-                wrapper.style.gap = '0px 10px'; // 减小垂直间距至 0px
+                wrapper.style.gap = '0px 10px'; // 减小垂直间距至 0px (垂直 0px)
                 wrapper.style.alignItems = 'center'; // 垂直居中
-                wrapper.style.padding = '0 10px';
+
+                // 优化：将垂直 padding 强制设为 0，进一步压缩上下间距
+                wrapper.style.padding = '0 10px'; // 保持水平 10px 填充，垂直 0px
             } else {
                 wrapper.style.padding = '0';
             }
@@ -542,26 +556,36 @@
                             ];
                         }
 
-                        // 过滤出已开启配置且返回 false (已使用/消耗) 的 Refill 缩写
+                        // 过滤出已开启配置且返回 false (已使用/已消耗) 的 Refill 缩写
                         const usedRefillAbbreviations = refillAbbrs
                             .filter(item => item.config && liveRefills[item.key] === false)
                             .map(item => item.label);
 
                         // 确定显示文本 (v1.0.4.7: "可用" 改为 "已使用")
-                        const displayText = usedRefillAbbreviations.length > 0
-                            ? usedRefillAbbreviations.join(', ') // 显示已使用的缩写 (已消耗)
-                            : '已使用'; // 如果 monitored items 都没有使用 (可用)
+                        // 修正： Torn API 返回 true 为可用，false 为已使用/已消耗。
+                        // 应当显示已使用的，即 liveRefills[item.key] === false
 
-                        // v1.0.4.7: 如果移动端且 Refill 状态为“已使用”（可用），则隐藏整行内容
-                        if (isMobile && displayText === '已使用') {
-                            section.style.display = 'none';
-                            return;
+                        // 如果有任何已使用的，则显示已使用的列表
+                        if (usedRefillAbbreviations.length > 0) {
+                            timeHtml = `<span style="font-weight: ${valueWeight};">${usedRefillAbbreviations.join(', ')}</span>`;
+                        } else {
+                            // 检查所有已启用的 Refill 是否都可用
+                            const allAvailable = refillAbbrs
+                                .filter(item => item.config)
+                                .every(item => liveRefills[item.key] === true);
+
+                            // v1.0.4.7: 移动端如果所有启用的 refill 都可用，则隐藏整行内容
+                            if (isMobile && allAvailable) {
+                                section.style.display = 'none';
+                                return;
+                            }
+                            // 否则，如果启用了 Refill，且不在隐藏状态，则显示“可用”
+                            timeHtml = `<span style="font-weight: ${valueWeight};">可用</span>`;
                         }
 
                         // 确保 section 可见（如果它不是因为上面条件而隐藏）
                         section.style.display = isMobile ? 'flex' : (ttIntegration ? 'flex' : 'block');
 
-                        timeHtml = `<span style="font-weight: ${valueWeight};">${displayText}</span>`;
                     }
                 } else if (remainingTime !== null) {
                     const formattedText = formatTime(remainingTime);
@@ -621,17 +645,24 @@
 
             // 提示信息（如果有 Key 但所有内容都关闭）
             if (sectionContainer && sectionContainer.id === 'tm-cooldown-wrapper') {
-                const hasEnabledContent = sectionContainer.querySelectorAll('section[style*="display: block"], section[style*="display: flex"]').length > 0;
+                // 检查可见的 sections 数量（style 不包含 display: none）
+                const enabledSections = sectionContainer.querySelectorAll('section').length;
+                const hiddenSections = sectionContainer.querySelectorAll('section[style*="display: none"]').length;
+                const hasEnabledContent = (enabledSections - hiddenSections) > 0;
+
                 const infoSpan = document.getElementById('tm-info-span');
 
                 if (!hasEnabledContent) {
                     if (!infoSpan) {
                         const newInfoSpan = document.createElement('span');
                         newInfoSpan.id = 'tm-info-span';
-                        newInfoSpan.textContent = '所有已启用的倒计时目前均已隐藏。请检查脚本顶部的配置。';
-                        newInfoSpan.style.color = '#777';
-                        newInfoSpan.style.display = 'block';
-                        sectionContainer.appendChild(newInfoSpan);
+                        // 移动端不显示，因为它在 mobile 模式下与 bar-wrap 在同一级
+                        if (!isMobile) {
+                            newInfoSpan.textContent = '所有已启用的倒计时目前均已隐藏。请检查脚本顶部的配置。';
+                            newInfoSpan.style.color = '#777';
+                            newInfoSpan.style.display = 'block';
+                            sectionContainer.appendChild(newInfoSpan);
+                        }
                     }
                 } else if (infoSpan) {
                     infoSpan.remove();
@@ -648,7 +679,438 @@
         }
     }
 
-    // ... (API / 缓存函数保持不变) ...
+
+    // ====================================================================
+    // OC 排序和筛选功能 (已添加等级 10、全部按钮和互斥逻辑)
+    // ====================================================================
+
+    /**
+     * 将时间字符串 "HH:MM:SS:mm" 转换为总秒数
+     * @param {string} timeStr - 格式为 "HH:MM:SS:mm" 的时间字符串
+     * @returns {number} 总秒数
+     */
+    function timeToSeconds(timeStr) {
+        if (!timeStr) return 0;
+        // TT 时间格式: HH:MM:SS:mm (4 parts)
+        const parts = timeStr.split(':').map(p => parseInt(p.trim(), 10));
+        if (parts.length < 4) return 0;
+        const [h, m, s, ms] = parts;
+        return h * 3600 + m * 60 + s + (ms / 100);
+    }
+
+    let currentSort = {
+        key: null, // 'level' or 'time'
+        direction: 0 // 0: off, 1: ASC (升序), -1: DESC (降序)
+    };
+
+    let selectedLevels = new Set();
+    const FILTER_ALL_KEY = 'ALL';
+
+    // 基础按钮样式 - 适配移动端
+    const baseButtonStyle = `
+        background-color: var(--default-element-background, #f2f2f2);
+        color: var(--default-font-color, #333);
+        border: 1px solid var(--default-element-border, #ccc);
+        padding: 3px 6px; /* 移动端更紧凑 */
+        margin-right: 5px;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 11px; /* 移动端更小 */
+        white-space: nowrap;
+    `;
+
+    // 选中状态样式
+    const activeButtonStyle = `
+        background-color: var(--default-red-color, #ff4136);
+        color: white;
+        border: 1px solid var(--default-red-color, #ff4136);
+    `;
+
+
+    /**
+     * 找到 OC 列表容器，兼容 TT 和原生移动端。
+     * @returns {HTMLElement | null}
+     */
+    function findOCListContainer() {
+        // 1. TornTools OC v2 列表
+        const ttContainer = document.querySelector('.tt-oc2-list');
+        if (ttContainer) return ttContainer;
+
+        // 2. 原生/移动端 OC 列表容器（通常在 faction crimes 页面）
+        const nativeOcElement = document.querySelector('[class*="oc-processed"]');
+        if (nativeOcElement) {
+            // 找到最近的、包含所有OC卡片的父级
+            let container = nativeOcElement.closest('div[class*="organized-crimes-list"], [class*="list-wrap"]');
+            if (container) return container;
+        }
+
+        // 3. Fallback: 尝试寻找 faction Crimes 页面主内容区域
+        const factionCrimesTab = document.querySelector('#faction-crimes-tab');
+        if (factionCrimesTab) {
+            const list = factionCrimesTab.querySelector('div[role="list"]'); // 原生列表可能使用的角色
+            if (list) return list;
+        }
+
+        return null;
+    }
+
+
+    function createOCControlBar(ocListContainer) {
+        if (document.getElementById('tm-oc-control-bar')) return;
+
+        const controlBar = document.createElement('div');
+        controlBar.id = 'tm-oc-control-bar';
+        controlBar.style.cssText = `
+            display: flex;
+            flex-direction: column; /* 移动端堆叠 */
+            justify-content: flex-start;
+            align-items: stretch; /* 确保子元素占满宽度 */
+            padding: 8px; /* 移动端 padding */
+            border-bottom: 1px solid var(--default-delimiter-color, #ccc);
+            margin-bottom: 5px;
+            background-color: var(--default-background-color, #fff); /* 确保背景色可见 */
+            z-index: 10;
+            position: sticky; /* 粘性定位 */
+            top: 0;
+        `;
+
+        // 排序组
+        const sortGroup = document.createElement('div');
+        sortGroup.style.display = 'flex';
+        sortGroup.style.alignItems = 'center';
+        sortGroup.style.gap = '5px';
+        sortGroup.style.marginBottom = '5px';
+        sortGroup.innerHTML = `<span style="font-weight: bold; font-size: 11px;">排序:</span>`;
+
+        // 筛选组容器 (用于 flex 布局和计数显示)
+        const filterWrapper = document.createElement('div');
+        filterWrapper.style.display = 'flex';
+        filterWrapper.style.justifyContent = 'space-between';
+        filterWrapper.style.alignItems = 'center';
+
+        // 筛选按钮组
+        const filterGroup = document.createElement('div');
+        filterGroup.id = 'tm-oc-filter-group';
+        filterGroup.style.display = 'flex';
+        filterGroup.style.alignItems = 'center';
+        filterGroup.style.gap = '5px';
+        filterGroup.style.flexWrap = 'wrap';
+        filterGroup.innerHTML = `<span style="font-weight: bold; font-size: 11px;">筛选等级:</span>`;
+
+        // 筛选计数显示
+        const countDisplay = document.createElement('span');
+        countDisplay.id = 'tm-oc-count-display';
+        countDisplay.textContent = '0/0';
+        countDisplay.style.cssText = `
+            font-weight: bold;
+            font-size: 12px;
+            color: var(--default-link-color, #666);
+            padding-right: 5px;
+            min-width: 30px; /* 确保空间 */
+            text-align: right;
+        `;
+
+        filterWrapper.appendChild(filterGroup);
+        filterWrapper.appendChild(countDisplay);
+
+        controlBar.appendChild(sortGroup);
+        controlBar.appendChild(filterWrapper);
+
+        // 插入到 OC 列表上方
+        ocListContainer.parentNode.insertBefore(controlBar, ocListContainer);
+
+        return { sortGroup, filterGroup, countDisplay };
+    }
+
+    function createSortButton(group, key, label) {
+        const button = document.createElement('button');
+        button.textContent = label;
+        button.style.cssText = baseButtonStyle;
+        button.dataset.key = key;
+        button.dataset.direction = 0; // 0: off, 1: ASC, -1: DESC
+
+        group.appendChild(button);
+        return button;
+    }
+
+    function createFilterButton(group, level) {
+        const button = document.createElement('button');
+        button.textContent = level;
+        button.style.cssText = baseButtonStyle;
+        button.dataset.level = level;
+
+        group.appendChild(button);
+        return button;
+    }
+
+    function updateSortButtonDisplay(button, key, direction) {
+        button.dataset.direction = direction;
+        button.style.cssText = baseButtonStyle;
+
+        let arrow = '';
+        if (direction === -1) {
+            arrow = ' ↓'; // 降序 (DESC)
+            button.style.cssText += activeButtonStyle;
+        } else if (direction === 1) {
+            arrow = ' ↑'; // 升序 (ASC)
+            button.style.cssText += activeButtonStyle;
+        }
+
+        const baseLabel = button.dataset.key === 'level' ? '等级' : '时间';
+        button.textContent = baseLabel + arrow;
+    }
+
+    /**
+     * 更新筛选按钮的选中状态样式
+     */
+    function updateFilterButtonDisplay(button, isSelected) {
+        button.style.cssText = baseButtonStyle;
+        if (isSelected) {
+            button.style.cssText += activeButtonStyle;
+        }
+    }
+
+
+    function applySortAndFilter(countDisplayElement) {
+        // 兼容 TT 和原生选择器
+        const ocWrappers = document.querySelectorAll('.tt-oc2-list > div[data-oc-id], [class*="organized-crimes-list"] > div[class*="wrapper___"]');
+        const ocListContainer = findOCListContainer();
+        if (!ocListContainer) {
+            if (countDisplayElement) countDisplayElement.textContent = '0/0';
+            return;
+        }
+
+        let visibleCount = 0;
+        const totalCount = ocWrappers.length;
+
+        // 1. 筛选 (Filter)
+
+        // 如果 selectedLevels 为空 (即没有选中任何等级)，则视同选中了 ALL
+        const filterActive = selectedLevels.size > 0;
+        const isAllSelected = !filterActive; // ALL 按钮的选中状态
+
+        // 更新 ALL 按钮的状态（如果存在）
+        const allBtn = document.querySelector(`#tm-oc-filter-group button[data-level="${FILTER_ALL_KEY}"]`);
+        if (allBtn) {
+            updateFilterButtonDisplay(allBtn, isAllSelected);
+        }
+
+        ocWrappers.forEach(wrapper => {
+            // TT/原生 Level 选择器
+            const levelSpan = wrapper.querySelector('.levelValue___TE4qC, [class*="level___"] [class*="textLevel___"] [class*="levelValue___"]');
+
+            if (!levelSpan) {
+                // 如果没有 Level 信息，默认显示 (只有在 ALL 模式或未筛选时才会计数/显示)
+                // 在筛选模式下，没有等级信息的不应该显示
+                wrapper.style.display = isAllSelected ? 'block' : 'none';
+                if (isAllSelected) visibleCount++;
+                return;
+            }
+            const level = parseInt(levelSpan.textContent.trim(), 10);
+
+            let shouldDisplay = true;
+
+            if (filterActive) {
+                let matched = false;
+                selectedLevels.forEach(filter => {
+                    if (filter === '<=5' && level <= 5) {
+                        matched = true;
+                    } else if (parseInt(filter, 10) === level) {
+                        matched = true;
+                    }
+                });
+                if (!matched) {
+                    shouldDisplay = false;
+                }
+            }
+
+            // 确保不影响 display: none 的 OC (如 TT 的 History/Hidden)
+            if (!wrapper.dataset.originalDisplay) {
+                // 仅在首次运行时缓存元素的原始 display 属性
+                wrapper.dataset.originalDisplay = window.getComputedStyle(wrapper).display;
+            }
+
+            // 筛选逻辑应用
+            if (shouldDisplay) {
+                wrapper.style.display = wrapper.dataset.originalDisplay;
+                visibleCount++;
+            } else {
+                wrapper.style.display = 'none';
+            }
+        });
+
+        // 3. 更新计数
+        if (countDisplayElement) {
+            countDisplayElement.textContent = `${visibleCount}/${totalCount}`;
+        }
+
+
+        // 2. 排序 (Sort)
+        if (currentSort.direction !== 0) {
+            const visibleWrappers = Array.from(ocWrappers).filter(w => w.style.display !== 'none');
+
+            visibleWrappers.sort((a, b) => {
+                let valA, valB;
+
+                if (currentSort.key === 'level') {
+                    // Level 选择器
+                    const levelSpanA = a.querySelector('.levelValue___TE4qC, [class*="level___"] [class*="textLevel___"] [class*="levelValue___"]');
+                    const levelSpanB = b.querySelector('.levelValue___TE4qC, [class*="level___"] [class*="textLevel___"] [class*="levelValue___"]');
+                    valA = parseInt(levelSpanA?.textContent.trim() || '0', 10);
+                    valB = parseInt(levelSpanB?.textContent.trim() || '0', 10);
+                } else if (currentSort.key === 'time') {
+                    // Time 选择器
+                    const timeSpanA = a.querySelector('.title___pB5FU span[aria-hidden="true"]');
+                    const timeSpanB = b.querySelector('.title___pB5FU span[aria-hidden="true"]');
+                    valA = timeToSeconds(timeSpanA?.textContent.trim());
+                    valB = timeToSeconds(timeSpanB?.textContent.trim());
+                } else {
+                    return 0;
+                }
+
+                let comparison = 0;
+                if (valA < valB) comparison = -1;
+                if (valA > valB) comparison = 1;
+
+                // 1 for ASC (升序), -1 for DESC (降序)
+                return comparison * currentSort.direction;
+            });
+
+            // 重新插入 DOM
+            visibleWrappers.forEach(wrapper => ocListContainer.appendChild(wrapper));
+        }
+    }
+
+
+    function initOCSortAndFilter() {
+        const ocListContainer = findOCListContainer();
+        if (!ocListContainer || document.getElementById('tm-oc-control-bar')) return;
+
+        const { sortGroup, filterGroup, countDisplay } = createOCControlBar(ocListContainer);
+
+        // --- 排序按钮 ---
+        const levelBtn = createSortButton(sortGroup, 'level', '等级');
+        const timeBtn = createSortButton(sortGroup, 'time', '时间');
+
+        // 默认状态：等级降序
+        currentSort = { key: 'level', direction: -1 };
+        updateSortButtonDisplay(levelBtn, 'level', -1);
+        updateSortButtonDisplay(timeBtn, 'time', 0);
+
+        // 排序点击事件
+        const handleSortClick = (e) => {
+            const clickedBtn = e.target.closest('button');
+            if (!clickedBtn || !clickedBtn.dataset.key) return;
+
+            const key = clickedBtn.dataset.key;
+            let currentDir = parseInt(clickedBtn.dataset.direction, 10);
+
+            // 互斥逻辑：先清除另一个按钮的状态
+            const otherKey = key === 'level' ? 'time' : 'level';
+            const otherBtn = document.querySelector(`#tm-oc-control-bar button[data-key="${otherKey}"]`);
+            if (otherBtn) {
+                updateSortButtonDisplay(otherBtn, otherKey, 0);
+            }
+
+            // 循环状态：降序 -> 升序 -> 未选中
+            let newDir;
+            if (currentSort.key === key) {
+                if (currentDir === -1) { // Current: DESC -> Next: ASC
+                    newDir = 1;
+                } else if (currentDir === 1) { // Current: ASC -> Next: OFF
+                    newDir = 0;
+                } else { // Current: OFF (Initial state) -> Next: DESC
+                    newDir = -1;
+                }
+            } else {
+                // Clicking a different button defaults to DESC (降序)
+                newDir = -1;
+            }
+
+            currentSort.key = (newDir !== 0) ? key : null;
+            currentSort.direction = newDir;
+
+            // 更新显示
+            updateSortButtonDisplay(levelBtn, 'level', currentSort.key === 'level' ? currentSort.direction : 0);
+            updateSortButtonDisplay(timeBtn, 'time', currentSort.key === 'time' ? currentSort.direction : 0);
+
+            applySortAndFilter(countDisplay);
+        };
+
+        levelBtn.addEventListener('click', handleSortClick);
+        timeBtn.addEventListener('click', handleSortClick);
+
+        // --- 筛选按钮 ---
+
+        // 1. 添加 '全部' 按钮
+        const allBtn = createFilterButton(filterGroup, '全部');
+        allBtn.dataset.level = FILTER_ALL_KEY;
+
+        // 2. 添加等级按钮 (包含 10)
+        const filterLevels = ['<=5', '6', '7', '8', '9', '10'];
+        const levelButtons = filterLevels.map(level => createFilterButton(filterGroup, level));
+
+        // 3. 筛选点击事件和互斥逻辑
+        const filterButtons = [allBtn, ...levelButtons];
+
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const level = btn.dataset.level;
+
+                if (level === FILTER_ALL_KEY) {
+                    // 如果点击了 '全部'
+                    selectedLevels.clear(); // 清空所有等级选中
+                    levelButtons.forEach(lBtn => updateFilterButtonDisplay(lBtn, false));
+                } else {
+                    // 如果点击了等级按钮
+
+                    // 切换当前等级的状态
+                    if (selectedLevels.has(level)) {
+                        selectedLevels.delete(level);
+                    } else {
+                        selectedLevels.add(level);
+                    }
+
+                    // 如果有任何等级被选中，则取消 '全部' 的逻辑由 applySortAndFilter 处理（当 selectedLevels.size > 0 时）
+
+                    // 如果所有等级都被取消选中，逻辑也由 applySortAndFilter 处理（selectedLevels.size === 0 时自动视为 ALL）
+                }
+
+                // 重新渲染按钮状态和应用筛选
+                levelButtons.forEach(lBtn => {
+                    const isSelected = selectedLevels.has(lBtn.dataset.level);
+                    updateFilterButtonDisplay(lBtn, isSelected);
+                });
+
+                applySortAndFilter(countDisplay);
+            });
+        });
+
+        // 初始状态：默认选中 '全部'（即 selectedLevels.size === 0）
+        // applySortAndFilter 会处理 ALL 按钮的选中状态显示。
+
+        // 初始应用排序 (默认等级降序) 和计数
+        applySortAndFilter(countDisplay);
+
+        // 增加一个 MutationObserver 来处理 OC 列表的动态加载或刷新
+        // 观察整个容器，因为移动端或 TT 可能会替换内容
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach(mutation => {
+                // 监听子节点变化，这表示 OC 列表内容可能已加载或更换
+                if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                    // 延迟应用，确保所有 OC 卡片及其内容（特别是等级）都已加载
+                    setTimeout(() => applySortAndFilter(countDisplay), 100);
+                }
+            });
+        });
+
+        observer.observe(ocListContainer, { childList: true, subtree: true });
+    }
+
+    // ====================================================================
+    // API / 缓存函数 (保持原样)
+    // ====================================================================
+
     function getCooldownsCacheSync() {
         const defaultCooldowns = null;
         const cacheRaw = localStorage.getItem(CACHE_KEY);
@@ -674,8 +1136,6 @@
     }
 
     function getOCCacheSync() {
-        // v1.0.4.2: 移除 TT_INTEGRATION_CACHED 检查，确保 Non-TT (包括移动端) 始终使用 OC 缓存
-
         const defaultOcTime = null;
         const cacheRaw = localStorage.getItem(OC_CACHE_KEY);
         const now = Date.now();
@@ -831,7 +1291,7 @@
 
     function tryInit() {
         // --- 0. Aggressive Cleanup of ALL script elements ---
-        document.querySelectorAll('[id^="tm-cd-"], #tm-cooldown-display, #tm-cooldown-wrapper, #tm-cooldown-hr, #tm-extra-input-wrap, .tm-delimiter, #tm-info-span').forEach(el => {
+        document.querySelectorAll('[id^="tm-cd-"], #tm-cooldown-display, #tm-cooldown-wrapper, #tm-cooldown-hr, #tm-extra-input-wrap, .tm-delimiter, #tm-info-span, #tm-oc-control-bar').forEach(el => {
             if (el._timer) clearInterval(el.remove);
             el.remove();
         });
@@ -843,6 +1303,15 @@
         let ttIntegration = false;
         let ttSidebarElement = null; // TT 模式下的 TT 容器
         let apiInputContainer = null; // API Key 输入框的直接父容器
+        let isOCPage = false; // 判断是否为 OC 页面
+
+        // 检查是否在 Faction Crimes 页面
+        if (document.location.href.includes('/factions.php?step=your')) {
+            const hash = document.location.hash || '#/tab=crimes';
+            if (hash.includes('tab=crimes')) {
+                isOCPage = true;
+            }
+        }
 
         if (isMobile) {
             container = document.querySelector('[class*="user-information-mobile"]');
@@ -913,6 +1382,12 @@
 
         if (!container) return false;
 
+        // --- OC 排序和筛选功能初始化 ---
+        if (isOCPage) {
+            // 延迟执行，确保 OC 列表 DOM 完全加载
+            setTimeout(initOCSortAndFilter, 1500);
+        }
+
         const savedKey = localStorage.getItem(LOCAL_KEY);
 
         if (!savedKey) {
@@ -957,7 +1432,10 @@
     // 使用 MutationObserver 等待页面加载
     if (!tryInit()) {
         const obs = new MutationObserver(() => {
-            if (tryInit()) obs.disconnect();
+            // 等待主要元素加载完成后再执行初始化
+            if (document.querySelector('div.user-information') || document.querySelector('[class*="user-information-mobile"]') || findOCListContainer()) {
+                if (tryInit()) obs.disconnect();
+            }
         });
         obs.observe(document.documentElement, { childList: true, subtree: true });
     }
