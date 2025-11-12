@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Torn OC and Cooldown check
 // @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
-// @version      1.0.0.3
-// @description  显示oc，drug，booster，medical剩余时间
+// @version      1.0.0.4
+// @description  显示oc，drug，booster，medical剩余时间，并检查refills。
 // @match        https://www.torn.com/*
 // @run-at       document-idle
 // @grant        GM_xmlhttpRequest
@@ -14,6 +14,7 @@
     const LOCAL_KEY = 'torn_cooldown_api_key';
     const CACHE_KEY = 'torn_cooldown_cache';
     const OC_CACHE_KEY = 'torn_oc_cache';
+    const REFILL_CACHE_KEY = 'torn_refill_cache';
 
     const CONFIG = {
         // --- 可通过修改 true/false 来控制显示/隐藏 ---
@@ -22,28 +23,73 @@
         SHOW_MEDICAL: true,
         SHOW_BOOSTER: true,
         SHOW_OC: true,
+
+        // Refills 独立控制
+        SHOW_REFILLS: true,
+        SHOW_REFILL_ENERGY: true,
+        SHOW_REFILL_NERVE: true,
+        SHOW_REFILL_TOKEN: false,
         // ------------------------------------------
 
         cacheDuration: 60, // api查询结果缓存有效期 60 秒
-        redWhenLow: true, // 是否在指定时间标红字体
+        redWhenLow: true, // 低于阈值时是否标红 (独立于日/夜间模式)
         redThresholdMinutes: 5, // 在低于5分钟的时候标红字体
         showSecondsThresholdMinutes: 5, // 在低于5分钟的时候显示秒
+
+        // 颜色配置
+        NIGHT_MODE_COLOR: '#FF4136', // 红色 (22:00 到 08:00 之间的夜间模式颜色，同时也是警告色)
+        DAY_MODE_COLOR: '#4A85C2',   // 淡蓝色 (08:00 到 22:00 之间的日间模式颜色)
+
+        // 时间段定义
+        DAY_START_HOUR_BJT: 8,       // 北京时间 08:00 (含)
+        DAY_END_HOUR_BJT: 22,      // 北京时间 22:00 (不含)
+
+        DEBUG_COLOR_BJT: '#90EE90', // 调试颜色：浅绿色
     };
 
     // --- 样式配置 ---
     const BASE_FONT_SIZE_PC = '15px';
     const BASE_FONT_SIZE_MOBILE = '13px';
-    const LABEL_COLOR = '#999';
-    const TIME_VALUE_COLOR = '#4A85C2'; // 饱和度更高的淡蓝色
+    const LABEL_COLOR_GRAY = '#999'; // 灰色标签色
     const TIME_FONT_WEIGHT_NORMAL = '400';
     const TIME_FONT_WEIGHT_LIGHT = '100';
     const PLACEHOLDER_MIN_HEIGHT_PC = '110px';
     const PLACEHOLDER_MIN_HEIGHT_MOBILE = '20px';
+    // Refill 标签颜色（保持灰色）
+    const REFILL_LABEL_FIXED_COLOR = LABEL_COLOR_GRAY;
     // ---
 
     // ====================================================================
     // 实用函数 (保持不变)
     // ====================================================================
+
+    /**
+     * 获取当前北京时间的时钟小时数 (0-23)。
+     * @returns {number} 北京时间的小时数。
+     */
+    function getBeijingHour() {
+        const now = new Date();
+
+        const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+        const BJT_OFFSET = 8 * 3600000;
+        const BJT_time = new Date(utc + BJT_OFFSET);
+
+        return BJT_time.getHours();
+    }
+
+    /**
+     * 检查当前北京时间是否处于夜间模式 (22:00 <= BJT < 08:00)。
+     * @returns {boolean} 如果是夜间模式返回 true，否则为日间模式 (false)。
+     */
+    function isNightMode() {
+        const hour = getBeijingHour();
+        const start = CONFIG.DAY_START_HOUR_BJT;
+        const end = CONFIG.DAY_END_HOUR_BJT;
+
+        const isDay = (hour >= start && hour < end);
+        return !isDay;
+    }
+
 
     function formatTime(seconds) {
         let s = Math.floor(seconds);
@@ -121,7 +167,7 @@
     }
 
     // ====================================================================
-    // API Key UI
+    // API Key UI (保持不变)
     // ====================================================================
 
     function createInputUI(container) {
@@ -173,10 +219,10 @@
     }
 
     // ====================================================================
-    // 核心显示函数 (修改 OC 标签)
+    // 核心显示函数 (已更新)
     // ====================================================================
 
-    function createTimeDisplay(container, cooldowns, ocTime, isPlaceholder = false) {
+    function createTimeDisplay(container, cooldowns, ocTime, refills, isPlaceholder = false) {
         let wrap = document.getElementById('tm-cooldown-display');
         const isMobile = container.className.includes('user-information-mobile');
         const API_KEY = localStorage.getItem(LOCAL_KEY);
@@ -224,9 +270,9 @@
         wrap.innerHTML = '';
         wrap.style.minHeight = 'auto';
 
-        // 注意：这里 ocTime 现在包含 value 和 difficulty
         const liveCooldowns = { ...cooldowns };
         const liveOcTime = ocTime ? { value: ocTime.value, difficulty: ocTime.difficulty } : null;
+        const liveRefills = refills ? { ...refills } : null;
 
         if (wrap._timer) clearInterval(wrap._timer);
 
@@ -234,54 +280,99 @@
             wrap.innerHTML = '';
             const items = [];
 
-            // 渲染 Drug/Medical/Booster
-            for (const key of ['drug', 'medical', 'booster']) {
+            // --- 基础颜色判断 (影响所有动态颜色) ---
+            const isNight = isNightMode();
+            const BASE_COLOR = isNight ? CONFIG.NIGHT_MODE_COLOR : CONFIG.DAY_MODE_COLOR;
+            // ----------------------------------------
+
+            // **调试信息已移除**
+
+
+            // 渲染 Cooldowns (Drug/Medical/Booster) 和 OC
+            // 它们的标签使用灰色，时间值使用 BASE_COLOR 或低时间警告红
+            const itemsToRender = ['drug', 'medical', 'booster', 'oc'];
+
+            for (const key of itemsToRender) {
                 let shouldShow = false;
-                if (key === 'drug' && CONFIG.SHOW_DRUG) shouldShow = true;
-                if (key === 'medical' && CONFIG.SHOW_MEDICAL) shouldShow = true;
-                if (key === 'booster' && CONFIG.SHOW_BOOSTER) shouldShow = true;
+                let remaining;
+                let label;
 
-                if (!(key in liveCooldowns) || !shouldShow) continue;
+                if (key === 'drug' && CONFIG.SHOW_DRUG) {
+                    shouldShow = true;
+                    remaining = liveCooldowns.drug;
+                    label = 'drug:';
+                }
+                // --- 手机端 Medical 缩写修改 ---
+                else if (key === 'medical' && CONFIG.SHOW_MEDICAL) {
+                    shouldShow = true;
+                    remaining = liveCooldowns.medical;
+                    label = isMobile ? 'med:' : 'medical:'; // 手机端缩写为 med:
+                }
+                // --- 结束 Medical 缩写修改 ---
+                else if (key === 'booster' && CONFIG.SHOW_BOOSTER) {
+                    shouldShow = true;
+                    remaining = liveCooldowns.booster;
+                    label = 'booster:';
+                }
+                else if (key === 'oc' && CONFIG.SHOW_OC && liveOcTime) {
+                    shouldShow = true;
+                    remaining = liveOcTime.value;
+                    label = `oc(${liveOcTime.difficulty || '?' }):`;
+                    liveOcTime.value = Math.max(remaining - 1, 0);
+                }
 
-                let remaining = liveCooldowns[key];
+                if (!shouldShow || remaining === undefined || remaining === null) continue;
 
                 const formattedText = formatTime(remaining);
-                const red = CONFIG.redWhenLow && remaining >= 0 && remaining < CONFIG.redThresholdMinutes * 60;
-                const finalColor = red ? 'red !important' : TIME_VALUE_COLOR;
+
+                const redOverride = CONFIG.redWhenLow && remaining >= 0 && remaining < CONFIG.redThresholdMinutes * 60;
+                const finalColor = redOverride ? CONFIG.NIGHT_MODE_COLOR + ' !important' : BASE_COLOR;
 
                 const timeHtml = formatTimeHtml(formattedText, finalColor);
 
                 const span = document.createElement('span');
-                span.innerHTML = `<span style="color: ${LABEL_COLOR};">${key}:</span> ${timeHtml}`;
+                span.innerHTML = `<span style="color: ${LABEL_COLOR_GRAY};">${label}</span> ${timeHtml}`;
 
                 if (!isMobile) span.style.display = 'block';
                 items.push(span);
 
-                liveCooldowns[key] = Math.max(remaining - 1, 0);
+                if (key !== 'oc') {
+                    liveCooldowns[key] = Math.max(remaining - 1, 0);
+                }
             }
 
-            // 渲染 OC (修改标签以包含难度)
-            if (liveOcTime && CONFIG.SHOW_OC) {
-                let remainingOC = liveOcTime.value;
-                const formattedOCText = formatTime(remainingOC);
+            // 渲染 Refills
+            if (liveRefills && CONFIG.SHOW_REFILLS) {
+                const parts = [];
 
-                const redOC = CONFIG.redWhenLow && remainingOC >= 0 && remainingOC < CONFIG.redThresholdMinutes * 60;
-                const finalOCColor = redOC ? 'red !important' : TIME_VALUE_COLOR;
+                // Refill 不可用时，状态指示符的颜色 (跟随 BASE_COLOR)
+                const REFILL_FALSE_COLOR_DYNAMIC = BASE_COLOR;
+                // Refill 标签 (`ref:`) 的颜色 (固定为灰色)
+                const REFILL_LABEL_COLOR = REFILL_LABEL_FIXED_COLOR;
 
-                const timeOcHtml = formatTimeHtml(formattedOCText, finalOCColor);
+                if (CONFIG.SHOW_REFILL_ENERGY && liveRefills.energy === false) {
+                    parts.push(`<span style="color: ${REFILL_FALSE_COLOR_DYNAMIC};">e</span>`);
+                }
+                if (CONFIG.SHOW_REFILL_NERVE && liveRefills.nerve === false) {
+                    parts.push(`<span style="color: ${REFILL_FALSE_COLOR_DYNAMIC};">n</span>`);
+                }
+                if (CONFIG.SHOW_REFILL_TOKEN && liveRefills.token === false) {
+                    parts.push(`<span style="color: ${REFILL_FALSE_COLOR_DYNAMIC};">t</span>`);
+                }
 
-                // --- 核心修改：生成包含难度的标签 ---
-                const ocLabel = `oc(${liveOcTime.difficulty || '?' }):`;
-                // ---
+                // --- 手机端 Refill 标签隐藏修改 ---
+                const refillLabelContent = isMobile ? '' : `<span style="color: ${REFILL_LABEL_COLOR};">ref:</span>`; // 手机端隐藏标签
+                // --- 结束 Refill 标签隐藏修改 ---
 
-                const spanOC = document.createElement('span');
-                spanOC.innerHTML = `<span style="color: ${LABEL_COLOR};">${ocLabel}</span> ${timeOcHtml}`;
+                const refillValue = parts.length > 0 ? parts.join(',') : '';
 
-                if (!isMobile) spanOC.style.display = 'block';
-                items.push(spanOC);
+                const spanRefill = document.createElement('span');
+                spanRefill.innerHTML = `${refillLabelContent}${refillValue}`;
 
-                liveOcTime.value = Math.max(remainingOC - 1, 0);
+                if (!isMobile) spanRefill.style.display = 'block';
+                items.push(spanRefill);
             }
+
 
             // 如果没有项目显示，提供提示
             if (items.length === 0 && API_KEY) {
@@ -294,6 +385,7 @@
         }
 
         render();
+        // Cooldowns 和 OC 需要每秒更新颜色/时间
         wrap._timer = setInterval(render, 1000);
 
         // 在 PC 端，确保底部有一条 HR 分隔线
@@ -305,7 +397,7 @@
     }
 
     // ====================================================================
-    // 数据获取函数 (修改 fetchOC 以提取 difficulty)
+    // 数据获取函数 (保持不变)
     // ====================================================================
 
     function fetchCooldowns(key, callback) {
@@ -356,7 +448,7 @@
     }
 
     function fetchOC(key, callback) {
-        let defaultOcTime = null; // 默认值包含时间0和未知难度
+        let defaultOcTime = null;
         const cacheRaw = localStorage.getItem(OC_CACHE_KEY);
         let cacheValid = false;
 
@@ -367,7 +459,6 @@
 
                 if (elapsedSeconds < CONFIG.cacheDuration) {
                     const remainingOC = Math.max(cache.data.value - elapsedSeconds, 0);
-                    // 从缓存中恢复难度字段
                     const cachedOcTime = { value: remainingOC, difficulty: cache.data.difficulty || '?' };
                     callback(cachedOcTime);
                     cacheValid = true;
@@ -395,20 +486,60 @@
 
                 if (remaining < 0) remaining = 0;
 
-                // --- 核心修改：提取 difficulty ---
                 const difficulty = oc.difficulty || '?';
                 const ocTime = { value: remaining, difficulty: difficulty };
-                // ---
 
-                // 缓存时也保存 difficulty
                 localStorage.setItem(OC_CACHE_KEY, JSON.stringify({_timestamp: Date.now(), data: ocTime}));
                 if (!cacheValid) callback(ocTime);
             })
             .catch(() => { if (!cacheValid) callback(defaultOcTime); });
     }
 
+    function fetchRefills(key, callback) {
+        const defaultRefills = { energy: true, nerve: true, token: true, special_count: 0 };
+        const cacheRaw = localStorage.getItem(REFILL_CACHE_KEY);
+        let cacheValid = false;
+
+        if (cacheRaw) {
+            try {
+                const cache = JSON.parse(cacheRaw);
+                const elapsedSeconds = (Date.now() - cache._timestamp) / 1000;
+
+                if (elapsedSeconds < CONFIG.cacheDuration) {
+                    callback(cache.data);
+                    cacheValid = true;
+                }
+            } catch (e) {}
+        }
+
+        if (cacheValid) return;
+
+        fetch(`https://api.torn.com/v2/user/refills?key=${key}`, {
+            method: 'GET',
+            headers: { accept: 'application/json' }
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error || !data.refills) {
+                    if (!cacheValid) callback(defaultRefills);
+                    return;
+                }
+
+                const refills = {
+                    energy: data.refills.energy || false,
+                    nerve: data.refills.nerve || false,
+                    token: data.refills.token || false,
+                    special_count: data.refills.special_count || 0
+                };
+
+                localStorage.setItem(REFILL_CACHE_KEY, JSON.stringify({ _timestamp: Date.now(), data: refills }));
+                if (!cacheValid) callback(refills);
+            })
+            .catch(() => { if (!cacheValid) callback(defaultRefills); });
+    }
+
     // ====================================================================
-    // 核心启动逻辑
+    // 核心启动逻辑 (保持不变)
     // ====================================================================
 
     function tryInit() {
@@ -432,11 +563,13 @@
             const inputWrap = document.getElementById('tm-extra-input-wrap');
             if (inputWrap) inputWrap.remove();
 
-            createTimeDisplay(container, null, null, true);
+            createTimeDisplay(container, null, null, null, true);
 
             fetchCooldowns(savedKey, (cooldowns) => {
                 fetchOC(savedKey, (ocTime) => {
-                    createTimeDisplay(container, cooldowns, ocTime, false);
+                    fetchRefills(savedKey, (refills) => {
+                        createTimeDisplay(container, cooldowns, ocTime, refills, false);
+                    });
                 });
             });
         }
