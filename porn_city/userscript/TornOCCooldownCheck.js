@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn OC and Cooldown check
 // @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
-// @version      1.0.0.8
+// @version      1.0.0.9
 // @description  显示oc，drug，booster，medical剩余时间，并检查refills。在OC页面添加排序和筛选功能，支持移动端。
 // @match        https://www.torn.com/*
 // @run-at       document-idle
@@ -720,7 +720,9 @@
             // Drug/Medical/Booster
             [
                 { key: 'drug', label: 'Drug', section: cdDrug, config: CONFIG.SHOW_DRUG },
-                { key: 'medical', label: 'Med', section: cdMedical, config: CONFIG.SHOW_MEDICAL }, // Med 简写
+                // *** 核心修改 ***
+                { key: 'medical', label: isMobile ? 'Med' : 'Medical', section: cdMedical, config: CONFIG.SHOW_MEDICAL }, // PC/Mobile 标签分离
+                // *** 结束修改 ***
                 { key: 'booster', label: 'Booster', section: cdBooster, config: CONFIG.SHOW_BOOSTER },
             ].forEach(item => {
                 if (!item.config || !item.section) return;
@@ -1170,7 +1172,7 @@
             });
             obs.observe(document.documentElement, { childList: true, subtree: true });
         }
-    }, 100); // <-- 修改：从 1500ms 缩短为 100ms
+    }, 100); // <-- 100ms 延迟
 
 
     // 方案二：启动一个定时器来强行处理SPA导航 (Torn 页面切换)
@@ -1186,6 +1188,6 @@
             console.log("[Torn OC Check] UI not found, re-initializing due to navigation...");
             tryInit(); // 尝试重新初始化
         }
-    }, 1000); // <-- 修改：从 3000ms 缩短为 1000ms
+    }, 1000); // <-- 1000ms 检查
 
 })();
