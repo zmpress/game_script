@@ -31,7 +31,7 @@
         SHOW_REFILLS: true,
         SHOW_REFILL_ENERGY: true,
         SHOW_REFILL_NERVE: true,
-        SHOW_REFILL_TOKEN: true,
+        SHOW_REFILL_TOKEN: false,
         // ------------------------------------------
 
         // BJT 夜间模式 (22:00 - 08:00) 标红 (仅 Refill)
