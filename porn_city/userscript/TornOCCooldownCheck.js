@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Torn OC and Cooldown check
-// @namespace    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
+// @namespace
 // @version      1.0.0.9
-// @description  显示oc，drug，booster，medical剩余时间，并检查refills。在OC页面添加排序和筛选功能，支持移动端。
+// @description  显示oc，drug，booster，medical剩余时间，并检查refills。
 // @match        https://www.torn.com/*
 // @run-at       document-idle
 // @grant        GM_xmlhttpRequest
