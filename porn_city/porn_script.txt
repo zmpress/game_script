@@ -16,6 +16,10 @@ https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/TornOCCooldownCheck.js
 
+1-3.优化 Torn 派系犯罪卡片的显示效果，并增加多级排序、筛选和简化开关
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCSortAndDisplay.js
+
 2.Torn 简中汉化脚本(优先选第二个，更推荐直接网页翻译)
 
 https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/torn_cn.js

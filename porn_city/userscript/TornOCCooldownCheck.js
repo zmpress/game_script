@@ -3,6 +3,7 @@
 // @namespace
 // @version      1.0.0.9
 // @description  显示oc，drug，booster，medical剩余时间，并检查refills。
+// @author       zmpress
 // @match        https://www.torn.com/*
 // @run-at       document-idle
 // @grant        GM_xmlhttpRequest
