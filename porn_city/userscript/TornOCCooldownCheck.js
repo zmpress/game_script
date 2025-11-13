@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Torn OC and Cooldown check
 // @namespace
-// @version      1.0.0.9
+// @version      1.0.1.0
 // @description  显示oc，drug，booster，medical剩余时间，并检查refills。
 // @author       zmpress
 // @match        https://www.torn.com/*
@@ -667,7 +667,7 @@
                                 return;
                             }
                             // 否则，如果启用了 Refill，且不在隐藏状态，则显示“可用”
-                            timeHtml = `<span style="font-weight: ${valueWeight};">可用</span>`;
+                            timeHtml = `<span style="font-weight: ${valueWeight};">已使用</span>`;
                             finalColor = BASE_COLOR; // "可用" 状态不标红
                         }
 
@@ -855,7 +855,8 @@
         return defaultOcTime;
     }
 
-    function getRefillsCacheSync() {
+    // [新代码]
+    function getRefillCacheSync() {
         const cacheRaw = localStorage.getItem(REFILL_CACHE_KEY);
         const now = Date.now();
 
@@ -863,14 +864,15 @@
             try {
                 const cache = JSON.parse(cacheRaw);
 
-                // Refill 的缓存逻辑 *自带* 过期时间戳，这已经是 Stale-while-revalidate
-                // 所以这里 *不需要* 修改
-                if (cache.data && cache._expiration_timestamp > now) {
+                // (Stale-while-revalidate)
+                // *移除* (cache._expiration_timestamp > now) 检查
+                // 只要有缓存，就返回计算后的值，即使已过期
+                if (cache.data) {
                     return {...cache.data};
                 }
             } catch (e) {}
         }
-        return null; // 返回 null 会自动触发 tryInit 中的重新获取
+        return null; // 只有在没有缓存或缓存损坏时才返回 null
     }
 
     function fetchCooldowns(key, callback) {
@@ -1110,7 +1112,7 @@
             // 1. 同步读取缓存数据 (无论是否过期)
             let latestCooldowns = getCooldownsCacheSync();
             let latestOcTime = getOCCacheSync();
-            let latestRefills = getRefillsCacheSync();
+            let latestRefills = getRefillCacheSync();
 
             // 第一次调用：立即使用缓存数据进行渲染 (不会有空白闪烁)
             createTimeDisplay(container, latestCooldowns, latestOcTime, latestRefills, insertionPoint, ttIntegration);
@@ -1146,8 +1148,7 @@
             }
 
             // (C) Refills
-            // `getRefillsCacheSync` 在过期时返回 null，这是最好的检查
-            if (latestRefills === null) {
+            if (isCacheStale(REFILL_CACHE_KEY, CONFIG.cacheDuration)) {
                 fetchRefills(savedKey, (refills) => {
                     latestRefills = refills; // 更新 "refills" 插槽
                     renderLatest(); // 使用最新数据重绘
