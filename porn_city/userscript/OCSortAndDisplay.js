@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         托恩帮派犯罪简化显示 (带排序和筛选)
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
+// @version      1.1.2
 // @description  优化 Torn 派系犯罪卡片的显示效果，并增加多级排序、筛选和简化开关
 // @author       htys (zmpress修改版)
 // @match        https://www.torn.com/factions.php?step=your*
@@ -410,10 +410,10 @@
     }
 
     function applyCornerNumbers(card) {
-        const notOpening = card.querySelector('.notOpening___BLPrF');
+        const notOpening = card.querySelector('[class*="notOpening___"]');
         if (!notOpening) return;
 
-        const titleEl = card.querySelector('.panelTitle___aoGuV');
+        const titleEl = card.querySelector('[class*="panelTitle___"]');
         const crimeName = titleEl ? titleEl.textContent.trim() : 'Unknown';
 
         notOpening.style.overflow = 'visible';
@@ -423,7 +423,7 @@
             if (cs.position === 'static') child.style.position = 'relative';
             child.style.overflow = 'visible';
 
-            const jobNameEl = child.querySelector('.title___UqFNy');
+            const jobNameEl = child.querySelector('[class*="title___"]');
             const jobName = jobNameEl ? jobNameEl.textContent.trim() : 'Unknown';
 
             const jobInfluence = Math.round(getInfluence(crimeName, jobName));
@@ -456,7 +456,7 @@
 
     // --- ensureOverlay (仅在 simplifyEnabled=true 时运行) ---
     function ensureOverlay(card) {
-        const scenario = card.querySelector('.scenario___cQfFm');
+        const scenario = card.querySelector('[class*="scenario___"]');
         if (!scenario) return;
         if (scenario.querySelector('[data-oc-overlay]')) return;
         if (scenario.querySelector('.failed___vUWp4')) return;
@@ -527,10 +527,9 @@
     // --- 重构：更新卡片信息 (数据绑定+可选的UI更新) ---
     function updateCardInfo(card) {
         // --- 1. 查找元素 ---
-        const titleEl = card.querySelector('.panelTitle___aoGuV');
-        const levelVal = card.querySelector('.levelValue___TE4qC');
-        const timerSrc = card.querySelector('.title___pB5FU');
-
+        const titleEl = card.querySelector('[class*="panelTitle___"]');
+        const levelVal = card.querySelector('span[class^="levelValue"]');
+        const timerSrc = card.querySelector('[class*="phase___"] [class*="title___"]') || card.querySelector('[class*="title___"]');
         const crimeName = titleEl ? titleEl.textContent.trim() : 'Unknown';
         const crimeLevel = levelVal ? levelVal.textContent.trim() : '?';
         const status = getStatus(card);
@@ -547,7 +546,7 @@
 
         // --- 3. 仅在 "简化" 模式下更新 overlay UI ---
         if (simplifyEnabled && isShowOverlay) {
-            const o = card.querySelector('.scenario___cQfFm')._ocOverlay;
+            const o = card.querySelector('[class*="scenario___"]')._ocOverlay;
             if (!o) return;
 
             const levelColor = levelVal ? window.getComputedStyle(levelVal).color : 'inherit';
@@ -579,7 +578,7 @@
 
                 // 仅在 "简化" 模式下更新 overlay 计时器
                 if (simplifyEnabled && isShowOverlay) {
-                    const o = card.querySelector('.scenario___cQfFm')._ocOverlay;
+                    const o = card.querySelector('[class*="scenario___"]')._ocOverlay;
                     if (o) o.timerEl.textContent = newTimeText;
                 }
             });
@@ -587,16 +586,16 @@
 
             // 初始设置 overlay 计时器
             if (simplifyEnabled && isShowOverlay) {
-                const o = card.querySelector('.scenario___cQfFm')._ocOverlay;
+                const o = card.querySelector('[class*="scenario___"]')._ocOverlay;
                 if (o) o.timerEl.textContent = timerSrc.textContent;
             }
         }
     }
 
     function getStatus(card) {
-        const phase = card.querySelector('.phase___LcbAX');
+        const phase = card.querySelector('[class*="phase___"]');
         if (!phase) return '';
-        const icon = phase.querySelector('.iconContainer___TDZ9F');
+        const icon = phase.querySelector('[class*="iconContainer___"]');
         if (icon) return icon.getAttribute('aria-label');
     }
 
