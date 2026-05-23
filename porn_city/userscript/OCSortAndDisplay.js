@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         托恩帮派犯罪简化显示 (带排序和筛选)
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  优化 Torn 派系犯罪卡片的显示效果，并增加多级排序、筛选和简化开关
 // @author       htys (zmpress修改版)
 // @match        https://www.torn.com/factions.php?step=your*
@@ -107,6 +107,18 @@
       .oc-btn.primary-sort {
         border-color: #ffd700;
         box-shadow: 0 0 8px rgba(255, 215, 0, 0.7);
+      }
+      /* 新增：专门用来安全隐藏卡片的样式，不破坏 SVG */
+      .oc-hidden-card {
+        position: absolute !important;
+        width: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
       }
       #oc-filter-count {
         margin-left: auto;
@@ -325,9 +337,12 @@
                 });
             }
 
-            card.style.display = isVisible ? '' : 'none';
+// 【修改点】：用添加 CSS 类的方式隐藏，而不是 display: none
             if (isVisible) {
+                card.classList.remove('oc-hidden-card');
                 visibleCards.push(card);
+            } else {
+                card.classList.add('oc-hidden-card');
             }
         });
 
