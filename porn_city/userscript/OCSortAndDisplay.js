@@ -459,8 +459,8 @@
         const scenario = card.querySelector('[class*="scenario___"]');
         if (!scenario) return;
         if (scenario.querySelector('[data-oc-overlay]')) return;
-        if (scenario.querySelector('.failed___vUWp4')) return;
-        if (scenario.querySelector('.success___AwcQT')) return;
+        if (scenario.querySelector('[class*="success___"]')) return;
+        if (scenario.querySelector('[class*="failed___"]')) return;
 
         Array.from(scenario.children).forEach((child) => {
             child.style.visibility = 'hidden';
