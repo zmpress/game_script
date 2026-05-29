@@ -482,9 +482,6 @@
 
         renderParticipatingStatus(container, userCrime, userId) {
             const slotIcons = this.createSlotIconsContainer();
-            slotIcons.addEventListener('click', () => {
-                window.location.href = `https://www.torn.com/factions.php?step=your#/tab=crimes&crimeId=${userCrime.id}`;
-            });
 
             const sortedSlots = userCrime.slots.sort((a, b) => {
                 if (a.user_id && b.user_id) return a.user.joined_at - b.user.joined_at;
@@ -495,6 +492,10 @@
             sortedSlots.forEach((slot) => {
                 const SegmentedIconInfo = this.getSegmentedIconInfo(slot);
                 const icon = this.createSlotIcon(slot, SegmentedIconInfo, userId);
+                // 为每个图标单独添加点击跳转事件
+                icon.addEventListener('click', () => {
+                    window.location.href = `https://www.torn.com/factions.php?step=your#/tab=crimes&crimeId=${userCrime.id}`;
+                });
                 fragment.appendChild(icon);
             });
             slotIcons.appendChild(fragment);
