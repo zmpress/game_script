@@ -531,26 +531,33 @@
 
         createSlotIconsContainer() {
             const container = document.createElement('div');
+            const isMobile = Utils.isMobileDevice();
+
             container.style.display = 'flex';
             container.style.alignItems = 'center';
-            container.style.height = 'auto'; // 紧凑：原本是17px固定高度，改为随内容自适应
+            container.style.height = 'auto';
             container.style.cursor = 'pointer';
             container.style.boxSizing = 'border-box';
-            container.style.background = 'linear-gradient(to bottom, rgba(30,30,30,0.02) 0%, rgba(0,0,0,0.02) 100%)';
-            container.style.border = '1px solid rgba(128, 128, 128, 0.2)';
-            container.style.borderRadius = '3px';
-            container.style.padding = '1px 5px 1px 0px'; // 紧凑：大幅缩小上下内边距
-            container.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.02)';
+
+            // --- 修改点：移除外层矩形边框 ---
+            container.style.border = 'none';
+            // ----------------------------
+
+            // 手机端可以适当减少背景的视觉占比或调整内边距
+            container.style.background = 'transparent'; // 如果不需要背景底色，设为 transparent
+            container.style.padding = isMobile ? '1px 2px' : '1px 5px 1px 0px';
+            container.style.boxShadow = 'none'; // 如果有阴影也一并去掉
 
             container.addEventListener('mouseover', () => {
-                container.style.background = 'linear-gradient(to bottom, rgba(30,30,30,0.04) 0%, rgba(0,0,0,0.04) 100%)';
-                container.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.08), 0 1px 3px rgba(0,0,0,0.03)';
+                // 如果去掉了背景色，这里可以根据需要调整悬浮效果
+                container.style.background = 'rgba(0,0,0,0.03)';
                 container.style.transition = 'all 0.2s ease';
             });
+
             container.addEventListener('mouseout', () => {
-                container.style.background = 'linear-gradient(to bottom, rgba(30,30,30,0.02) 0%, rgba(0,0,0,0.02) 100%)';
-                container.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.02)';
+                container.style.background = 'transparent';
             });
+
             return container;
         }
 
