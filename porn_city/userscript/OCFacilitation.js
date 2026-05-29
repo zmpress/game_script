@@ -679,6 +679,7 @@
                 itemDiv.style.alignItems = 'center';
                 itemDiv.style.gap = '3px';
                 itemDiv.dataset.cooldownKey = item.key; // 用于后续更新
+                itemDiv.style.cursor = 'pointer';
                 
                 const timeText = seconds > 0 ? this.formatCooldownTime(seconds) : '就绪';
                 const colorStyle = seconds > 0 ? 'color: #FF9800;' : 'color: #4CAF50;';
@@ -687,6 +688,22 @@
                     <span>${item.icon}</span>
                     <span class="cooldown-time" style="${colorStyle} font-weight: 500;">${timeText}</span>
                 `;
+                
+                // 添加点击跳转事件
+                let targetUrl = '';
+                if (item.key === 'medical') {
+                    targetUrl = 'https://www.torn.com/factions.php?step=your#/tab=armoury';
+                } else if (item.key === 'drug') {
+                    targetUrl = 'https://www.torn.com/item.php';
+                } else if (item.key === 'booster') {
+                    targetUrl = 'https://www.torn.com/item.php';
+                }
+                
+                if (targetUrl) {
+                    itemDiv.addEventListener('click', () => {
+                        window.location.href = targetUrl;
+                    });
+                }
                 
                 container.appendChild(itemDiv);
             });
@@ -719,9 +736,15 @@
             refillsDiv.style.padding = '0';
             refillsDiv.style.fontSize = '11px';
             refillsDiv.style.color = '#666';
+            refillsDiv.style.cursor = 'pointer';
             
             const labelText = unused.join(',');
             refillsDiv.innerHTML = `<span style="font-weight: 500; color: #2196F3;">${labelText}</span>`;
+            
+            // 添加点击跳转事件
+            refillsDiv.addEventListener('click', () => {
+                window.location.href = 'https://www.torn.com/page.php?sid=points';
+            });
             
             container.appendChild(refillsDiv);
         }
