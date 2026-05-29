@@ -26,16 +26,16 @@
     const CONFIG = {
         USER_ID: '',
         CACHE: {
-            OC_DATA_DURATION: 30, // API 缓存时间，单位：秒 (默认 30 秒)
+            OC_DATA_DURATION: 30, // Organized Crime API 缓存时间，单位：秒 (默认 30 秒)
             COOLDOWN_DURATION: 30, // Cooldowns API 缓存时间，单位：秒 (默认 30 秒)
             REFILLS_DURATION: 30 // Refills API 缓存时间，单位：秒 (默认 30 秒)
         },
-        COOLDOWN_SETTINGS: {
+        COOLDOWN_SETTINGS: { // true 打开 / false 关闭
             SHOW_DRUG: true, // 显示药物冷却
             SHOW_MEDICAL: true, // 显示医疗冷却
             SHOW_BOOSTER: true // 显示瓶装啤酒冷却
         },
-        REFILLS_SETTINGS: {
+        REFILLS_SETTINGS: { // true 打开 / false 关闭
             SHOW_ENERGY: true, // 显示 energy 补充状态
             SHOW_NERVE: true, // 显示 nerve 补充状态
             SHOW_TOKEN: true // 显示 token 补充状态
