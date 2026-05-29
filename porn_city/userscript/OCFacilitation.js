@@ -27,18 +27,25 @@
         USER_ID: '',
         CACHE: {
             OC_DATA_DURATION: 30, // API 缓存时间，单位：秒 (默认 30 秒)
-            COOLDOWN_DURATION: 30 // Cooldowns API 缓存时间，单位：秒 (默认 30 秒)
+            COOLDOWN_DURATION: 30, // Cooldowns API 缓存时间，单位：秒 (默认 30 秒)
+            REFILLS_DURATION: 30 // Refills API 缓存时间，单位：秒 (默认 30 秒)
         },
         COOLDOWN_SETTINGS: {
             SHOW_DRUG: true, // 显示药物冷却
             SHOW_MEDICAL: true, // 显示医疗冷却
             SHOW_BOOSTER: true // 显示瓶装啤酒冷却
         },
+        REFILLS_SETTINGS: {
+            SHOW_ENERGY: true, // 显示 energy 补充状态
+            SHOW_NERVE: true, // 显示 nerve 补充状态
+            SHOW_TOKEN: true // 显示 token 补充状态
+        },
         API: {
             TORN_V2_URL: 'https://api.torn.com/v2',
             ENDPOINTS: {
                 USER_OC: '/user/organizedcrime',
-                USER_COOLDOWNS: '/user/cooldowns'
+                USER_COOLDOWNS: '/user/cooldowns',
+                USER_REFILLS: '/user/refills'
             }
         },
         UI: {
@@ -427,6 +434,47 @@
                 return null;
             }
         }
+
+        // 获取用户补充状态数据
+        static async getUserRefills() {
+            const apiKey = localStorage.getItem("z_tornMinimalKey");
+            if (!apiKey) return null;
+
+            try {
+                const cacheKey = 'z_api2_userRefills';
+                const cachedDataStr = localStorage.getItem(cacheKey);
+                const currentTime = Date.now();
+                const cacheExpirationTime = CONFIG.CACHE.REFILLS_DURATION * 1000;
+
+                // 判断缓存是否在有效期内
+                if (cachedDataStr) {
+                    const parsed = JSON.parse(cachedDataStr);
+                    if (currentTime - parsed.last_fetched_time < cacheExpirationTime) {
+                        return parsed.data;
+                    }
+                }
+
+                // 缓存已过期，请求新数据
+                const response = await fetch(`${CONFIG.API.TORN_V2_URL}${CONFIG.API.ENDPOINTS.USER_REFILLS}?key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error(`获取补充状态失败: ${data.error.error}`);
+                    return null;
+                }
+
+                // 将成功返回的数据存入缓存
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    data: data.refills,
+                    last_fetched_time: currentTime
+                }));
+
+                return data.refills;
+            } catch (error) {
+                console.error('获取补充状态数据失败:', error);
+                return null;
+            }
+        }
     }
 
     // =============== 状态图标管理类 ===============
@@ -558,6 +606,8 @@
             const cooldowns = await APIManager.getUserCooldowns();
             if (!cooldowns) return;
 
+            const refills = await APIManager.getUserRefills();
+
             const isMobile = Utils.isMobileDevice();
             const cooldownContainer = document.createElement('div');
             cooldownContainer.id = 'oc-cooldown-display';
@@ -601,6 +651,11 @@
             // 格式化并显示三个冷却项目
             this.renderCooldownItems(cooldownContainer, cooldowns);
 
+            // 添加补充状态显示
+            if (refills) {
+                this.renderRefillsStatus(cooldownContainer, refills);
+            }
+
             if (!isMobile) {
                 container.appendChild(cooldownContainer);
             }
@@ -635,6 +690,40 @@
                 
                 container.appendChild(itemDiv);
             });
+        }
+        
+        renderRefillsStatus(container, refills) {
+            const isMobile = Utils.isMobileDevice();
+            
+            // 检查哪些补充还没用（false 表示没用过）
+            const unused = [];
+            if (!refills.energy && CONFIG.REFILLS_SETTINGS.SHOW_ENERGY) {
+                unused.push(isMobile ? 'e' : 'energy');
+            }
+            if (!refills.nerve && CONFIG.REFILLS_SETTINGS.SHOW_NERVE) {
+                unused.push(isMobile ? 'n' : 'nerve');
+            }
+            if (!refills.token && CONFIG.REFILLS_SETTINGS.SHOW_TOKEN) {
+                unused.push(isMobile ? 't' : 'token');
+            }
+            
+            // 如果全部都用过了或都隐藏了，不显示
+            if (unused.length === 0) return;
+            
+            // 创建显示元素
+            const refillsDiv = document.createElement('div');
+            refillsDiv.style.display = 'flex';
+            refillsDiv.style.alignItems = 'center';
+            refillsDiv.style.gap = '3px';
+            refillsDiv.style.margin = '0';
+            refillsDiv.style.padding = '0';
+            refillsDiv.style.fontSize = '11px';
+            refillsDiv.style.color = '#666';
+            
+            const labelText = unused.join(',');
+            refillsDiv.innerHTML = `<span style="font-weight: 500; color: #2196F3;">${labelText}</span>`;
+            
+            container.appendChild(refillsDiv);
         }
         
         startCooldownTimer(container, initialCooldowns) {
