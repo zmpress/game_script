@@ -1,10 +1,8 @@
 // ==UserScript==
-// @name         OCFacilitation
-// @namespace    https://greasyfork.org/users/[daluo]
-// @version      1.0.5.7
-// @description  Make OC 2.0 easier for regular players
-// @description:zh-CN  使普通玩家oc2.0更简单和方便
-// @author       daluo
+// @name         OC进度显示和Cooldowns(可改脚本开关控制显示)
+// @version      1.0
+// @description  显示 oc 进度，显示drug，medical，booster 的剩余时间，显示 refill 信息，均可设置是否显示
+// @author       zmpress [3633431]
 // @match        https://www.torn.com/*
 // @run-at       document-start
 // @connect      *
@@ -34,7 +32,7 @@
             SHOW_ICONS: true, // 显示图标（false 时显示文字标签）
             SHOW_DRUG: true, // 显示药物冷却
             SHOW_MEDICAL: true, // 显示医疗冷却
-            SHOW_BOOSTER: true, // 显示瓶装啤酒冷却
+            SHOW_BOOSTER: true, // 显示啤酒冷却
             WARNING_TIME: { // 预警时间（秒），低于此时间显示红色
                 DRUG: 300, // 药物预警时间，单位：秒（默认 5 分钟）
                 MEDICAL: 300, // 医疗预警时间，单位：秒（默认 5 分钟）
