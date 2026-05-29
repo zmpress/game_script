@@ -26,12 +26,14 @@
     const CONFIG = {
         USER_ID: '',
         CACHE: {
-            OC_DATA_DURATION: 30 // API 缓存时间，单位：秒 (默认 30 秒)
+            OC_DATA_DURATION: 30, // API 缓存时间，单位：秒 (默认 30 秒)
+            COOLDOWN_DURATION: 30 // Cooldowns API 缓存时间，单位：秒 (默认 30 秒)
         },
         API: {
             TORN_V2_URL: 'https://api.torn.com/v2',
             ENDPOINTS: {
-                USER_OC: '/user/organizedcrime'
+                USER_OC: '/user/organizedcrime',
+                USER_COOLDOWNS: '/user/cooldowns'
             }
         },
         UI: {
@@ -360,6 +362,47 @@
             }
         }
 
+        // 获取用户冷却时间数据
+        static async getUserCooldowns() {
+            const apiKey = localStorage.getItem("z_tornMinimalKey");
+            if (!apiKey) return null;
+
+            try {
+                const cacheKey = 'z_api2_userCooldowns';
+                const cachedDataStr = localStorage.getItem(cacheKey);
+                const currentTime = Date.now();
+                const cacheExpirationTime = CONFIG.CACHE.COOLDOWN_DURATION * 1000;
+
+                // 判断缓存是否在有效期内
+                if (cachedDataStr) {
+                    const parsed = JSON.parse(cachedDataStr);
+                    if (currentTime - parsed.last_fetched_time < cacheExpirationTime) {
+                        return parsed.data;
+                    }
+                }
+
+                // 缓存已过期，请求新数据
+                const response = await fetch(`${CONFIG.API.TORN_V2_URL}${CONFIG.API.ENDPOINTS.USER_COOLDOWNS}?key=${apiKey}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    console.error(`获取冷却时间失败: ${data.error.error}`);
+                    return null;
+                }
+
+                // 将成功返回的数据存入缓存
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    data: data.cooldowns,
+                    last_fetched_time: currentTime
+                }));
+
+                return data.cooldowns;
+            } catch (error) {
+                console.error('获取冷却时间数据失败:', error);
+                return null;
+            }
+        }
+
         static async getPlayerId() {
             const playerId = localStorage.getItem('sessionTokenOwner') || localStorage.getItem('PlayerId');
             if (playerId !== null) return parseInt(playerId);
@@ -499,7 +542,147 @@
                 fragment.appendChild(icon);
             });
             slotIcons.appendChild(fragment);
+            
+            // 添加冷却时间显示
+            this.addCooldownDisplay(container, slotIcons);
+            
             container.appendChild(slotIcons);
+        }
+
+        async addCooldownDisplay(container, slotIcons) {
+            const cooldowns = await APIManager.getUserCooldowns();
+            if (!cooldowns) return;
+
+            const isMobile = Utils.isMobileDevice();
+            const cooldownContainer = document.createElement('div');
+            cooldownContainer.id = 'oc-cooldown-display';
+            
+            // 根据设备类型设置不同的样式和位置
+            if (isMobile) {
+                // 手机端：在右侧显示
+                cooldownContainer.style.display = 'flex';
+                cooldownContainer.style.flexDirection = 'row';
+                cooldownContainer.style.alignItems = 'center';
+                cooldownContainer.style.gap = '8px';
+                cooldownContainer.style.marginLeft = '10px';
+                cooldownContainer.style.fontSize = '11px';
+                cooldownContainer.style.color = '#666';
+                
+                // 将冷却时间容器放在 slotIcons 的右侧
+                slotIcons.style.display = 'flex';
+                slotIcons.style.alignItems = 'center';
+                const wrapper = document.createElement('div');
+                wrapper.style.display = 'flex';
+                wrapper.style.alignItems = 'center';
+                wrapper.appendChild(slotIcons);
+                wrapper.appendChild(cooldownContainer);
+                container.innerHTML = '';
+                container.appendChild(wrapper);
+            } else {
+                // 电脑端：在下方显示，支持自动换行
+                cooldownContainer.style.display = 'flex';
+                cooldownContainer.style.flexDirection = 'row';
+                cooldownContainer.style.flexWrap = 'wrap';
+                cooldownContainer.style.gap = '12px';
+                cooldownContainer.style.marginTop = '4px';
+                cooldownContainer.style.fontSize = '11px';
+                cooldownContainer.style.color = '#666';
+                cooldownContainer.style.padding = '2px 0';
+            }
+
+            // 格式化并显示三个冷却项目
+            const items = [
+                { key: 'drug', label: '药物', icon: '💊' },
+                { key: 'medical', label: '医疗', icon: '🏥' },
+                { key: 'booster', label: '瓶装啤酒', icon: '🍺' }
+            ];
+
+            items.forEach(item => {
+                const seconds = cooldowns[item.key];
+                const itemDiv = document.createElement('div');
+                itemDiv.style.display = 'flex';
+                itemDiv.style.alignItems = 'center';
+                itemDiv.style.gap = '3px';
+                itemDiv.dataset.cooldownKey = item.key; // 用于后续更新
+                
+                const timeText = seconds > 0 ? this.formatCooldownTime(seconds) : '就绪';
+                const colorStyle = seconds > 0 ? 'color: #FF9800;' : 'color: #4CAF50;';
+                
+                itemDiv.innerHTML = `
+                    <span>${item.icon}</span>
+                    <span class="cooldown-time" style="${colorStyle} font-weight: 500;">${timeText}</span>
+                `;
+                
+                cooldownContainer.appendChild(itemDiv);
+            });
+
+            if (!isMobile) {
+                container.appendChild(cooldownContainer);
+            }
+            
+            // 启动定时器更新时间
+            this.startCooldownTimer(cooldownContainer, cooldowns);
+        }
+        
+        startCooldownTimer(container, initialCooldowns) {
+            // 清除可能存在的旧定时器
+            if (this.cooldownTimerId) {
+                clearInterval(this.cooldownTimerId);
+            }
+            
+            // 存储剩余秒数
+            const remainingSeconds = {};
+            Object.keys(initialCooldowns).forEach(key => {
+                remainingSeconds[key] = initialCooldowns[key];
+            });
+            
+            // 每秒更新一次
+            this.cooldownTimerId = setInterval(() => {
+                let allReady = true;
+                
+                // 更新每个冷却项
+                container.querySelectorAll('[data-cooldown-key]').forEach(itemDiv => {
+                    const key = itemDiv.dataset.cooldownKey;
+                    const timeSpan = itemDiv.querySelector('.cooldown-time');
+                    
+                    if (remainingSeconds[key] > 0) {
+                        remainingSeconds[key]--;
+                        allReady = false;
+                        
+                        const timeText = this.formatCooldownTime(remainingSeconds[key]);
+                        timeSpan.textContent = timeText;
+                        timeSpan.style.color = '#FF9800';
+                    } else {
+                        timeSpan.textContent = '就绪';
+                        timeSpan.style.color = '#4CAF50';
+                    }
+                });
+                
+                // 如果所有冷却都就绪，停止定时器
+                if (allReady) {
+                    clearInterval(this.cooldownTimerId);
+                    this.cooldownTimerId = null;
+                }
+            }, 1000);
+        }
+
+        formatCooldownTime(seconds) {
+            if (seconds <= 0) return '就绪';
+            
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            
+            if (days > 0) {
+                return `${days}d${hours}h`;
+            } else if (hours > 0) {
+                return `${hours}h${minutes}m`;
+            } else if (minutes > 0) {
+                return `${minutes}m${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
         }
 
         getSegmentedIconInfo(slot) {
