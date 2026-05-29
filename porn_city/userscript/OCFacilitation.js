@@ -29,6 +29,11 @@
             OC_DATA_DURATION: 30, // API 缓存时间，单位：秒 (默认 30 秒)
             COOLDOWN_DURATION: 30 // Cooldowns API 缓存时间，单位：秒 (默认 30 秒)
         },
+        COOLDOWN_SETTINGS: {
+            SHOW_DRUG: true, // 显示药物冷却
+            SHOW_MEDICAL: true, // 显示医疗冷却
+            SHOW_BOOSTER: true // 显示瓶装啤酒冷却
+        },
         API: {
             TORN_V2_URL: 'https://api.torn.com/v2',
             ENDPOINTS: {
@@ -584,12 +589,27 @@
                 cooldownContainer.style.flexDirection = 'row';
                 cooldownContainer.style.flexWrap = 'wrap';
                 cooldownContainer.style.gap = '12px';
+                cooldownContainer.style.alignContent = 'flex-start';
                 cooldownContainer.style.marginTop = '4px';
                 cooldownContainer.style.fontSize = '11px';
                 cooldownContainer.style.color = '#666';
                 cooldownContainer.style.padding = '2px 0';
+                cooldownContainer.style.lineHeight = '1';
+                cooldownContainer.style.marginBottom = '0';
             }
 
+            // 格式化并显示三个冷却项目
+            this.renderCooldownItems(cooldownContainer, cooldowns);
+
+            if (!isMobile) {
+                container.appendChild(cooldownContainer);
+            }
+            
+            // 启动定时器更新时间
+            this.startCooldownTimer(cooldownContainer, cooldowns);
+        }
+
+        renderCooldownItems(container, cooldowns) {
             // 格式化并显示三个冷却项目
             const items = [
                 { key: 'drug', label: '药物', icon: '💊' },
@@ -600,7 +620,7 @@
             items.forEach(item => {
                 const seconds = cooldowns[item.key];
                 const itemDiv = document.createElement('div');
-                itemDiv.style.display = 'flex';
+                itemDiv.style.display = CONFIG.COOLDOWN_SETTINGS[`SHOW_${item.key.toUpperCase()}`] ? 'flex' : 'none';
                 itemDiv.style.alignItems = 'center';
                 itemDiv.style.gap = '3px';
                 itemDiv.dataset.cooldownKey = item.key; // 用于后续更新
@@ -613,15 +633,8 @@
                     <span class="cooldown-time" style="${colorStyle} font-weight: 500;">${timeText}</span>
                 `;
                 
-                cooldownContainer.appendChild(itemDiv);
+                container.appendChild(itemDiv);
             });
-
-            if (!isMobile) {
-                container.appendChild(cooldownContainer);
-            }
-            
-            // 启动定时器更新时间
-            this.startCooldownTimer(cooldownContainer, cooldowns);
         }
         
         startCooldownTimer(container, initialCooldowns) {
@@ -675,9 +688,9 @@
             const secs = seconds % 60;
             
             if (days > 0) {
-                return `${days}d${hours}h`;
+                return `${days}d ${hours}h`;
             } else if (hours > 0) {
-                return `${hours}h${minutes}m`;
+                return `${hours}h ${minutes}m`;
             } else if (minutes >= 1) {
                 return `${minutes}m`;
             } else {
