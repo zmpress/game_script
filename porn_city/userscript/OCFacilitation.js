@@ -437,7 +437,7 @@
             inputContainer.style.display = 'flex';
             inputContainer.style.alignItems = 'center';
             inputContainer.style.gap = '5px';
-            inputContainer.style.padding = '3px 0';
+            inputContainer.style.padding = '0px'; // 紧凑：移除这里的纵向 padding
 
             const input = document.createElement('input');
             input.type = 'text';
@@ -533,13 +533,13 @@
             const container = document.createElement('div');
             container.style.display = 'flex';
             container.style.alignItems = 'center';
-            container.style.height = '17px';
+            container.style.height = 'auto'; // 紧凑：原本是17px固定高度，改为随内容自适应
             container.style.cursor = 'pointer';
             container.style.boxSizing = 'border-box';
             container.style.background = 'linear-gradient(to bottom, rgba(30,30,30,0.02) 0%, rgba(0,0,0,0.02) 100%)';
             container.style.border = '1px solid rgba(128, 128, 128, 0.2)';
             container.style.borderRadius = '3px';
-            container.style.padding = '3px 5px 3px 0px';
+            container.style.padding = '1px 5px 1px 0px'; // 紧凑：大幅缩小上下内边距
             container.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.05), 0 1px 2px rgba(0,0,0,0.02)';
 
             container.addEventListener('mouseover', () => {
@@ -560,7 +560,7 @@
             icon.style.height = '17px';
             icon.style.borderRadius = '50%';
             icon.style.position = 'relative';
-            icon.style.margin = '5px 7.5px 5px 0px';
+            icon.style.margin = '1px 7.5px 1px 0px'; // 紧凑：缩小圆圈本身的上下外边距
             icon.style.boxSizing = 'border-box';
             icon.style.display = 'flex';
             icon.style.alignItems = 'center';
@@ -750,9 +750,9 @@
             container.style.alignItems = 'center';
             container.style.gap = '5px';
             container.style.backgroundColor = '#F44336';
-            container.style.padding = '3px 8px';
+            container.style.padding = '1px 8px'; // 紧凑：缩小上下内边距
             container.style.borderRadius = '3px';
-            container.style.marginBottom = '10px';
+            container.style.marginBottom = '2px'; // 紧凑：缩小与下面元素的距离
             return container;
         }
 
@@ -866,12 +866,13 @@
             const container = document.createElement('div');
             container.style.display = 'flex';
             container.style.flexDirection = 'column';
-            container.style.height = '32px';
-            container.style.marginTop = '10px';
+            container.style.height = 'auto'; // 紧凑：移除原先固定的 32px
+            container.style.minHeight = '20px'; // 设定最小自适应高度
+            container.style.marginTop = '2px'; // 紧凑：从 10px 降到 2px
             container.id = 'oc-status-container';
 
             if (Utils.isMobileDevice()) {
-                container.style.margin = '10px 15px';
+                container.style.margin = '2px 15px'; // 紧凑：移动端的 margin 也同步调小
                 container.style.width = 'calc(100% - 30px)';
             }
 
