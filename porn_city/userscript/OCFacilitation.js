@@ -25,8 +25,10 @@
     // =============== 配置管理 ===============
     const CONFIG = {
         USER_ID: '',
+        CACHE: {
+            OC_DATA_DURATION: 30 // API 缓存时间，单位：秒 (默认 30 秒)
+        },
         API: {
-            KEY: '8AHk0VKg018vFXKZ', // 已硬编码为你提供的 Key
             TORN_V2_URL: 'https://api.torn.com/v2',
             ENDPOINTS: {
                 USER_OC: '/user/organizedcrime'
@@ -313,16 +315,45 @@
 
     // =============== API管理类 ===============
     class APIManager {
-        // 使用 Torn 官方 V2 API 获取个人 OC 数据
+        // 使用 Torn 官方 V2 API 获取个人 OC 数据 (带有时间缓存机制)
         static async getUserOCData() {
+            const apiKey = localStorage.getItem("z_tornMinimalKey");
+            if (!apiKey) return { error: true, message: "请输入 API Key" };
+
             try {
-                const response = await fetch(`${CONFIG.API.TORN_V2_URL}${CONFIG.API.ENDPOINTS.USER_OC}?key=${CONFIG.API.KEY}`);
+                const cacheKey = 'z_api2_userOrganizedcrime';
+                const cachedDataStr = localStorage.getItem(cacheKey);
+                const currentTime = Date.now();
+                const cacheExpirationTime = CONFIG.CACHE.OC_DATA_DURATION * 1000;
+
+                // 判断缓存是否在有效期内
+                if (cachedDataStr) {
+                    const parsed = JSON.parse(cachedDataStr);
+                    if (currentTime - parsed.last_fetched_time < cacheExpirationTime) {
+                        return { data: parsed.data };
+                    }
+                }
+
+                // 缓存已过期，请求新数据
+                const response = await fetch(`${CONFIG.API.TORN_V2_URL}${CONFIG.API.ENDPOINTS.USER_OC}?key=${apiKey}`);
                 const data = await response.json();
+
                 if (data.error) {
                     console.error(`Torn API错误: ${data.error.error}`);
-                    return null;
+                    // 如果因为 Key 错误导致报错，通知重新输入
+                    if (data.error.code === 1 || data.error.code === 2 || data.error.code === 18) {
+                        return { error: true, message: "API Key 无效，请检查" };
+                    }
+                    return null; // 其他服务器错误
                 }
-                return data.organizedCrime;
+
+                // 将成功返回的数据存入缓存
+                localStorage.setItem(cacheKey, JSON.stringify({
+                    data: data.organizedCrime,
+                    last_fetched_time: currentTime
+                }));
+
+                return { data: data.organizedCrime };
             } catch (error) {
                 console.error('获取玩家OC数据失败:', error);
                 return null;
@@ -333,8 +364,11 @@
             const playerId = localStorage.getItem('sessionTokenOwner') || localStorage.getItem('PlayerId');
             if (playerId !== null) return parseInt(playerId);
 
+            const apiKey = localStorage.getItem("z_tornMinimalKey");
+            if (!apiKey) return null;
+
             try {
-                const response = await fetch(`https://api.torn.com/user/?selections=basic&key=${CONFIG.API.KEY}`);
+                const response = await fetch(`https://api.torn.com/user/?selections=basic&key=${apiKey}`);
                 const data = await response.json();
                 if (data.error) throw new Error(`API错误: ${data.error.error}`);
 
@@ -342,18 +376,40 @@
                 return parseInt(data.player_id);
             } catch (error) {
                 console.error('获取玩家信息失败:', error);
-                throw error;
+                return null;
             }
         }
     }
 
     // =============== 状态图标管理类 ===============
     class StatusIconManager {
-        async updateStatusIcons(userId) {
+        async updateStatusIcons() {
             const ocStatusContainer = document.getElementById('oc-status-container');
             if (!ocStatusContainer) return;
 
-            const userOC = await APIManager.getUserOCData();
+            // 每次渲染前清空之前的状态或输入框
+            ocStatusContainer.innerHTML = '';
+
+            const apiKey = localStorage.getItem("z_tornMinimalKey");
+            if (!apiKey) {
+                this.renderApiKeyInput(ocStatusContainer);
+                return;
+            }
+
+            // 确保我们有 USER_ID（用来标记自己的星星标记）
+            if (!CONFIG.USER_ID) {
+                CONFIG.USER_ID = await APIManager.getPlayerId();
+            }
+
+            const response = await APIManager.getUserOCData();
+
+            // 如果发生 Api key 无效等错误，则渲染输入框重新输入
+            if (response && response.error) {
+                this.renderApiKeyInput(ocStatusContainer, response.message);
+                return;
+            }
+
+            const userOC = response ? response.data : null;
 
             if (userOC) {
                 const mappedCrime = {
@@ -370,10 +426,58 @@
                         hasTool: function() { return this.item_requirement && this.item_requirement.is_available; }
                     }))
                 };
-                this.renderParticipatingStatus(ocStatusContainer, mappedCrime, userId);
+                this.renderParticipatingStatus(ocStatusContainer, mappedCrime, CONFIG.USER_ID);
             } else {
                 this.renderNonParticipatingStatus(ocStatusContainer);
             }
+        }
+
+        renderApiKeyInput(container, errorMsg = "") {
+            const inputContainer = document.createElement('div');
+            inputContainer.style.display = 'flex';
+            inputContainer.style.alignItems = 'center';
+            inputContainer.style.gap = '5px';
+            inputContainer.style.padding = '3px 0';
+
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.placeholder = errorMsg || '输入 Minimal API Key';
+            input.style.padding = '4px 8px';
+            input.style.border = '1px solid #ccc';
+            input.style.borderRadius = '3px';
+            input.style.fontSize = '12px';
+            input.style.color = '#333';
+            input.style.width = '180px';
+            input.style.outline = 'none';
+
+            // 输入框提示灰字效果在 placeholder 中即可实现，如需改变 placeholder 颜色：
+            input.style.setProperty('::placeholder', 'color: #999');
+
+            const btn = document.createElement('button');
+            btn.textContent = '确认';
+            btn.style.padding = '4px 10px';
+            btn.style.backgroundColor = '#4CAF50';
+            btn.style.color = 'white';
+            btn.style.border = 'none';
+            btn.style.borderRadius = '3px';
+            btn.style.cursor = 'pointer';
+            btn.style.fontSize = '12px';
+
+            btn.addEventListener('click', () => {
+                const val = input.value.trim();
+                if (val) {
+                    // 1. 将 Key 永久保存到本地
+                    localStorage.setItem('z_tornMinimalKey', val);
+                    // 2. 清除之前的错误请求缓存以强制刷新
+                    localStorage.removeItem('z_api2_userOrganizedcrime');
+                    // 3. 重新渲染状态图标
+                    this.updateStatusIcons();
+                }
+            });
+
+            inputContainer.appendChild(input);
+            inputContainer.appendChild(btn);
+            container.appendChild(inputContainer);
         }
 
         renderParticipatingStatus(container, userCrime, userId) {
@@ -782,7 +886,8 @@
 
         async initialize() {
             try {
-                await this.initializeData();
+                this.statusIconManager = new StatusIconManager();
+                // 不再在此处强制等待 getPlayerId，交给 updateStatusIcons 处理
                 await this.setupStatusIcons();
                 this.setupPageChangeListeners();
             } catch (error) {
@@ -790,14 +895,8 @@
             }
         }
 
-        async initializeData() {
-            CONFIG.USER_ID = await APIManager.getPlayerId();
-            this.statusIconManager = new StatusIconManager();
-        }
-
         async setupStatusIcons() {
-            const playerId = CONFIG.USER_ID;
-            this.statusIconManager.updateStatusIcons(playerId);
+            this.statusIconManager.updateStatusIcons();
         }
 
         setupPageChangeListeners() {
