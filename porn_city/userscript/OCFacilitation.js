@@ -678,8 +678,8 @@
                 return `${days}d${hours}h`;
             } else if (hours > 0) {
                 return `${hours}h${minutes}m`;
-            } else if (minutes > 0) {
-                return `${minutes}m${secs}s`;
+            } else if (minutes >= 1) {
+                return `${minutes}m`;
             } else {
                 return `${secs}s`;
             }
