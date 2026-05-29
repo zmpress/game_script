@@ -31,9 +31,15 @@
             REFILLS_DURATION: 30 // Refills API 缓存时间，单位：秒 (默认 30 秒)
         },
         COOLDOWN_SETTINGS: { // true 打开 / false 关闭
+            SHOW_ICONS: true, // 显示图标（false 时显示文字标签）
             SHOW_DRUG: true, // 显示药物冷却
             SHOW_MEDICAL: true, // 显示医疗冷却
-            SHOW_BOOSTER: true // 显示瓶装啤酒冷却
+            SHOW_BOOSTER: true, // 显示瓶装啤酒冷却
+            WARNING_TIME: { // 预警时间（秒），低于此时间显示红色
+                DRUG: 300, // 药物预警时间，单位：秒（默认 5 分钟）
+                MEDICAL: 300, // 医疗预警时间，单位：秒（默认 5 分钟）
+                BOOSTER: 300 // 啤酒预警时间，单位：秒（默认 5 分钟）
+            }
         },
         REFILLS_SETTINGS: { // true 打开 / false 关闭
             SHOW_ENERGY: true, // 显示 energy 补充状态
@@ -667,10 +673,12 @@
         renderCooldownItems(container, cooldowns) {
             // 格式化并显示三个冷却项目
             const items = [
-                { key: 'drug', label: '药物', icon: '💊' },
-                { key: 'medical', label: '医疗', icon: '🏥' },
-                { key: 'booster', label: '瓶装啤酒', icon: '🍺' }
+                { key: 'drug', label: 'Drug', icon: '💊' },
+                { key: 'medical', label: 'Med', icon: '🏥' },
+                { key: 'booster', label: 'Booster', icon: '🍺' }
             ];
+
+            const showIcons = CONFIG.COOLDOWN_SETTINGS.SHOW_ICONS;
 
             items.forEach(item => {
                 const seconds = cooldowns[item.key];
@@ -682,10 +690,20 @@
                 itemDiv.style.cursor = 'pointer';
                 
                 const timeText = seconds > 0 ? this.formatCooldownTime(seconds) : '就绪';
-                const colorStyle = seconds > 0 ? 'color: #FF9800;' : 'color: #4CAF50;';
+                const warningTime = CONFIG.COOLDOWN_SETTINGS.WARNING_TIME[item.key.toUpperCase()];
+                let colorStyle = 'color: #000;'; // 默认黑色
+                
+                if (seconds === 0) {
+                    colorStyle = 'color: #4CAF50;'; // 就绪显示绿色
+                } else if (warningTime && seconds <= warningTime) {
+                    colorStyle = 'color: #FF0000;'; // 低于预警时间显示红色
+                }
+                
+                // 根据开关决定显示图标还是文字标签
+                const displayContent = showIcons ? item.icon : `${item.label}:`;
                 
                 itemDiv.innerHTML = `
-                    <span>${item.icon}</span>
+                    <span>${displayContent}</span>
                     <span class="cooldown-time" style="${colorStyle} font-weight: 500;">${timeText}</span>
                 `;
                 
@@ -739,7 +757,7 @@
             refillsDiv.style.cursor = 'pointer';
             
             const labelText = unused.join(',');
-            refillsDiv.innerHTML = `<span style="font-weight: 500; color: #2196F3;">${labelText}</span>`;
+            refillsDiv.innerHTML = `<span style="font-weight: 500; color: #000;">${labelText}</span>`;
             
             // 添加点击跳转事件
             refillsDiv.addEventListener('click', () => {
@@ -776,10 +794,17 @@
                         
                         const timeText = this.formatCooldownTime(remainingSeconds[key]);
                         timeSpan.textContent = timeText;
-                        timeSpan.style.color = '#FF9800';
+                        
+                        // 根据预警时间设置颜色
+                        const warningTime = CONFIG.COOLDOWN_SETTINGS.WARNING_TIME[key.toUpperCase()];
+                        if (warningTime && remainingSeconds[key] <= warningTime) {
+                            timeSpan.style.color = '#FF0000'; // 低于预警时间显示红色
+                        } else {
+                            timeSpan.style.color = '#000'; // 默认黑色
+                        }
                     } else {
                         timeSpan.textContent = '就绪';
-                        timeSpan.style.color = '#4CAF50';
+                        timeSpan.style.color = '#4CAF50'; // 就绪显示绿色
                     }
                 });
                 
