@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         OC进度显示和Cooldowns(可设置，兼容PDA)
-// @version      1.2
+// @version      1.3
 // @description  显示 oc 进度，显示drug，medical，booster 的剩余时间，显示 refill 信息，均可设置是否显示
 // @author       zmpress [3633431]
 // @match        https://www.torn.com/*
@@ -196,170 +196,7 @@
         }
     }
 
-    // =============== DOM 辅助类 (用于帮派页面的UI渲染) ===============
-    class CrimeDOMHelper {
-        static getDOMInfo(element) {
-            const slotWrappers = Array.from(element.querySelectorAll(CONFIG.UI.SELECTORS.SLOTS))
-                .filter(el => el.parentElement !== element.parentElement);
-            return {
-                totalSlots: slotWrappers.length,
-                emptySlots: element.querySelectorAll(CONFIG.UI.SELECTORS.WAITING).length,
-                timeElement: element.querySelector(CONFIG.UI.SELECTORS.TITLE)
-            };
-        }
 
-        static calculateReadyAtTime(element) {
-            const { timeElement, emptySlots } = this.getDOMInfo(element);
-            const completionTimeStr = timeElement?.textContent?.trim();
-            const completionTime = this.EstimateCompletionTime(completionTimeStr);
-            return completionTime - emptySlots * CONFIG.TIME.SECONDS_PER_DAY;
-        }
-
-        static EstimateCompletionTime(timeStr) {
-            if (!timeStr) return null;
-            try {
-                const [days, hours, minutes, seconds] = timeStr.split(':').map(Number);
-                return Utils.getNow() + Utils.calculateTimeFromParts(days, hours, minutes, seconds);
-            } catch (error) {
-                console.error("计算完成时间失败:", error, timeStr);
-                return null;
-            }
-        }
-    }
-
-    // =============== UI管理类 ===============
-    class CrimeUIManager {
-        static updateAllCrimesUI(crimeListContainer) {
-            if (!crimeListContainer) return;
-            Array.from(crimeListContainer.children).forEach(element => {
-                this.updateSingleCrimeUI(element);
-            });
-
-            const sortButtonSet = crimeListContainer.parentElement.getElementsByClassName('sort-button');
-            if (sortButtonSet.length === 0) {
-                this.addSortButton(crimeListContainer);
-            }
-        }
-
-        static addSortButton(crimeListContainer) {
-            const sortButton = document.createElement('button');
-            sortButton.textContent = '按等级排序';
-            Object.assign(sortButton.style, {
-                margin: '10px 0', padding: '8px 16px', border: 'none', borderRadius: '4px',
-                backgroundColor: '#007bff', color: '#fff', fontWeight: '500', cursor: 'pointer',
-                transition: 'all 0.2s ease', boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                letterSpacing: '0.3px', fontSize: '14px', display: 'block', width: '100%',
-                textAlign: 'center', textTransform: 'uppercase', marginBottom: '10px'
-            });
-            sortButton.addEventListener('click', () => this.sortCrimesByLevel(crimeListContainer));
-            sortButton.classList.add('sort-button');
-            crimeListContainer.before(sortButton);
-        }
-
-        static sortCrimesByLevel(crimeListContainer) {
-            const sortedElements = Array.from(crimeListContainer.children)
-                .sort((a, b) => {
-                    const aLevel = a.querySelector(CONFIG.UI.SELECTORS.LEVEL_VALUE)?.textContent || '0';
-                    const aTitle = a.querySelector(CONFIG.UI.SELECTORS.PANEL_TITLE)?.textContent || "AA"
-                    const aSortText = aLevel + "_" + aTitle.replace(/[^a-zA-Z]/g, '')
-
-                    const bLevel = b.querySelector(CONFIG.UI.SELECTORS.LEVEL_VALUE)?.textContent || '0';
-                    const bTitle = b.querySelector(CONFIG.UI.SELECTORS.PANEL_TITLE)?.textContent || "AA"
-                    const bSortText = bLevel + "_" + bTitle.replace(/[^a-zA-Z]/g, '')
-
-                    return bSortText.localeCompare(aSortText);
-                });
-
-            sortedElements.forEach(element => crimeListContainer.appendChild(element));
-        }
-
-        static updateSingleCrimeUI(element) {
-            const crimeNameEl = element.querySelector(CONFIG.UI.SELECTORS.PANEL_TITLE);
-            if (!crimeNameEl) return;
-
-            const { totalSlots, emptySlots } = CrimeDOMHelper.getDOMInfo(element);
-            const currentUsers = totalSlots - emptySlots;
-
-            const readyAt = CrimeDOMHelper.calculateReadyAtTime(element);
-            const now = Utils.getNow();
-            const extraTimeHours = readyAt ? (readyAt - now) / 3600 : 0;
-
-            this.clearUI(element, crimeNameEl);
-
-            if (currentUsers > 0) {
-                this.addStatusInfo(element, crimeNameEl, {
-                    currentUsers, totalSlots, extraTimeHours, isFullyStaffed: emptySlots === 0
-                });
-            }
-        }
-
-        static clearUI(element, crimeNameEl) {
-            element.style.color = '';
-            element.style.border = '';
-            crimeNameEl.querySelectorAll('span[data-oc-ui]').forEach(span => span.remove());
-        }
-
-        static addStatusInfo(element, crimeNameEl, stats) {
-            const { currentUsers, totalSlots, extraTimeHours, isFullyStaffed } = stats;
-            const statusSpan = document.createElement('span');
-            statusSpan.setAttribute('data-oc-ui', 'status');
-            statusSpan.textContent = `当前${currentUsers}人,共需${totalSlots}人。`;
-            this.applyStatusStyle(element, statusSpan, extraTimeHours, isFullyStaffed);
-            crimeNameEl.appendChild(document.createTextNode(' '));
-            crimeNameEl.appendChild(statusSpan);
-        }
-
-        static applyStatusStyle(element, statusSpan, extraTimeHours, isFullyStaffed) {
-            statusSpan.style.padding = '4px 8px';
-            statusSpan.style.borderRadius = '4px';
-            statusSpan.style.fontWeight = '500';
-            statusSpan.style.display = 'inline-block';
-            statusSpan.style.boxShadow = '0 1px 2px rgba(0,0,0,0.1)';
-            statusSpan.style.transition = 'all 0.2s ease';
-
-            const isMobile = Utils.isMobileDevice();
-            statusSpan.style.fontSize = isMobile ? '10px' : '12px';
-
-            if (extraTimeHours <= CONFIG.TIME.URGENT_THRESHOLD && !isFullyStaffed) {
-                element.style.border = CONFIG.UI.STYLES.URGENT.BORDER;
-                statusSpan.style.background = 'linear-gradient(135deg, #ff4d4d 0%, #e60000 100%)';
-                statusSpan.style.color = '#fff';
-                statusSpan.style.border = '1px solid #cc0000';
-
-                const hours = Math.floor(extraTimeHours);
-                const minutes = Math.floor((extraTimeHours % 1) * 60);
-                statusSpan.innerHTML = isMobile
-                    ? `<span style="font-size:11px">⚠</span> ${hours}h${minutes}m`
-                    : `<span style="font-size:14px;margin-right:4px">⚠</span>急需人手！还剩<strong style="font-weight:600">${hours}小时${minutes}分</strong>`;
-            } else if (extraTimeHours <= CONFIG.TIME.STABLE_THRESHOLD) {
-                element.style.border = CONFIG.UI.STYLES.STABLE.BORDER;
-                statusSpan.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-                statusSpan.style.color = '#fff';
-                statusSpan.style.border = '1px solid #3d8b40';
-                statusSpan.innerHTML = isMobile ? `<span style="font-size:11px">✓</span> 配置正常` : `<span style="font-size:14px;margin-right:4px">✓</span>人员配置合理`;
-            } else {
-                const extraUsers = Math.floor(extraTimeHours/24) - 1;
-                if (extraUsers > 0) {
-                    element.style.border = CONFIG.UI.STYLES.EXCESS.BORDER;
-                    statusSpan.style.background = 'linear-gradient(135deg, #2196F3 0%, #1976D2 100%)';
-                    statusSpan.style.color = '#fff';
-                    statusSpan.style.border = '1px solid #1565C0';
-                    statusSpan.innerHTML = isMobile
-                        ? `<span style="font-size:11px">ℹ</span> 可调${extraUsers}人`
-                        : `<span style="font-size:14px;margin-right:4px">ℹ</span>可调配 <strong style="font-weight:600">${extraUsers}</strong> 人至其他OC`;
-                } else {
-                    element.style.border = CONFIG.UI.STYLES.STABLE.BORDER;
-                    statusSpan.style.background = 'linear-gradient(135deg, #4CAF50 0%, #45a049 100%)';
-                    statusSpan.style.color = '#fff';
-                    statusSpan.style.border = '1px solid #3d8b40';
-                    statusSpan.innerHTML = isMobile ? `<span style="font-size:11px">✓</span> 配置正常` : `<span style="font-size:14px;margin-right:4px">✓</span>人员配置合理`;
-                }
-            }
-
-            statusSpan.addEventListener('mouseover', () => statusSpan.style.transform = 'translateY(-1px)');
-            statusSpan.addEventListener('mouseout', () => statusSpan.style.transform = 'translateY(0)');
-        }
-    }
 
     // =============== API管理类 ===============
     class APIManager {
@@ -1557,56 +1394,12 @@
         }
 
         async handlePageChange() {
-            if (!Utils.isFactionPage() || !Utils.isOCPage()) {
-                this.cleanup();
-                return;
-            }
-
-            try {
-                const container = await Utils.waitForWrapper();
-                await this.handleInitialUIUpdate(container);
-
-                if (!this.observer) this.setupObserver(container);
-            } catch (error) {
-                console.error('处理页面变化失败:', error);
-            }
-        }
-
-        async handleInitialUIUpdate(container) {
-            await new Promise(resolve => setTimeout(resolve, CONFIG.UI.LOAD_DELAY));
-            await this.updateCrimeListUI(container);
-        }
-
-        async updateCrimeListUI(container) {
-            if (this.isUpdating) return;
-            try {
-                this.isUpdating = true;
-                CrimeUIManager.updateAllCrimesUI(container);
-            } finally {
-                this.isUpdating = false;
-            }
-        }
-
-        setupObserver(container) {
-            this.observer = new MutationObserver(Utils.debounce((mutations) => {
-                const hasChildrenChanges = mutations.some(mutation =>
-                    mutation.type === 'childList' && mutation.target === container
-                );
-
-                if (hasChildrenChanges) {
-                    this.updateCrimeListUI(container).catch(error => console.error('更新犯罪任务UI失败:', error));
-                }
-            }, CONFIG.UI.UPDATE_DEBOUNCE));
-
-            this.observer.observe(container, { childList: true, subtree: false, attributes: false, characterData: false });
+            // 不再对 OC 页面进行任何干预
+            return;
         }
 
         cleanup() {
-            if (this.observer) {
-                this.observer.disconnect();
-                this.observer = null;
-            }
-            this.isUpdating = false;
+            // 清理逻辑已简化
         }
 
         getStatusContainerParent() {
