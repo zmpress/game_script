@@ -56,7 +56,7 @@
             REFILLS_DURATION: 30 // Refills API 缓存时间，单位：秒 (默认 30 秒)
         },
         COOLDOWN_SETTINGS: { // true 打开 / false 关闭
-            SHOW_ICONS: false, // 显示图标（false 时显示文字标签）
+            SHOW_ICONS: true, // 显示图标（false 时显示文字标签）
             SHOW_DRUG: true, // 显示药物冷却
             SHOW_MEDICAL: true, // 显示医疗冷却
             SHOW_BOOSTER: true, // 显示啤酒冷却
