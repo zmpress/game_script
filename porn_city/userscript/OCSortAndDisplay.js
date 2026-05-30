@@ -3,7 +3,7 @@
 // @namespace    http://tampermonkey.net/
 // @version      1.1.4
 // @description  优化 Torn 派系犯罪卡片的显示效果，并增加多级排序、筛选和简化开关
-// @author       htys (zmpress修改版)
+// @author       zmpress [3633431]
 // @match        https://www.torn.com/factions.php?step=your*
 // @grant        none
 // @updateURL    https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/OCSortAndDisplay.js
@@ -15,8 +15,10 @@
 
     // --- 新增：本地存储和开关状态 ---
     const LS_KEY_SIMPLIFY = 'oc_simplify_display';
+    const LS_KEY_SHOW_SCORE = 'oc_show_score'; // 工分显示开关
     // 默认值为 'true'。只有当 localStorage 明确存为 'false' 时才为 false。
     const simplifyEnabled = localStorage.getItem(LS_KEY_SIMPLIFY) !== 'false';
+    const showScoreEnabled = localStorage.getItem(LS_KEY_SHOW_SCORE) !== 'false'; // 默认显示工分
 
     // 原有的功能开关（保留，以防你需要手动关闭）
     const isShowInfluence = true;
@@ -269,6 +271,7 @@
         <button id="oc-sort-default" class="oc-btn primary-sort" data-sort-state="active">默认</button>
         <button id="oc-sort-level" class="oc-btn" data-sort-state="none">等级</button>
         <button id="oc-sort-time" class="oc-btn" data-sort-state="none">完成时间</button>
+        <button id="oc-sort-score" class="oc-btn" data-sort-state="none">工分</button>
       </div>
       <div class="oc-filter-group">
         <span>筛选:</span>
@@ -283,6 +286,7 @@
       <div class="oc-filter-group">
         <span>显示:</span>
         <button id="oc-toggle-simplify" class="oc-btn"></button>
+        <button id="oc-toggle-score" class="oc-btn"></button>
       </div>
       <div id="oc-filter-count"></div>
     `;
@@ -292,6 +296,7 @@
         const sortDefaultBtn = filterBar.querySelector('#oc-sort-default');
         const sortLevelBtn = filterBar.querySelector('#oc-sort-level');
         const sortTimeBtn = filterBar.querySelector('#oc-sort-time');
+        const sortScoreBtn = filterBar.querySelector('#oc-sort-score'); // 工分排序按钮
         const filterBtns = filterBar.querySelectorAll('[data-level-filter]');
 
         // --- 简化开关逻辑 (已修改) ---
@@ -308,6 +313,19 @@
             localStorage.setItem(LS_KEY_SIMPLIFY, !simplifyEnabled);
             location.reload();
         });
+        
+        // --- 工分显示开关逻辑 ---
+        const scoreToggleBtn = filterBar.querySelector('#oc-toggle-score');
+        if (showScoreEnabled) {
+            scoreToggleBtn.textContent = '隐藏总工分';
+            scoreToggleBtn.classList.add('active');
+        } else {
+            scoreToggleBtn.textContent = '展示总工分';
+        }
+        scoreToggleBtn.addEventListener('click', () => {
+            localStorage.setItem(LS_KEY_SHOW_SCORE, !showScoreEnabled);
+            location.reload();
+        });
         // --- 结束 ---
 
 
@@ -315,34 +333,50 @@
         function updateSortStates() {
             const levelState = sortLevelBtn.dataset.sortState;
             const timeState = sortTimeBtn.dataset.sortState;
+            const scoreState = sortScoreBtn.dataset.sortState; // 工分排序状态
 
-            if (levelState === 'none' && timeState === 'none') {
+            if (levelState === 'none' && timeState === 'none' && scoreState === 'none') {
                 sortDefaultBtn.dataset.sortState = 'active';
                 sortDefaultBtn.classList.add('primary-sort');
                 sortLevelBtn.classList.remove('primary-sort');
                 sortTimeBtn.classList.remove('primary-sort');
+                sortScoreBtn.classList.remove('primary-sort');
             } else {
                 sortDefaultBtn.dataset.sortState = 'none';
                 sortDefaultBtn.classList.remove('primary-sort');
 
                 const levelIsPrimary = sortLevelBtn.classList.contains('primary-sort');
                 const timeIsPrimary = sortTimeBtn.classList.contains('primary-sort');
+                const scoreIsPrimary = sortScoreBtn.classList.contains('primary-sort');
 
-                if (!levelIsPrimary && !timeIsPrimary) {
+                if (!levelIsPrimary && !timeIsPrimary && !scoreIsPrimary) {
                     if (levelState !== 'none') {
                         sortLevelBtn.classList.add('primary-sort');
                     } else if (timeState !== 'none') {
                         sortTimeBtn.classList.add('primary-sort');
+                    } else if (scoreState !== 'none') {
+                        sortScoreBtn.classList.add('primary-sort');
                     }
                 } else if (levelIsPrimary && levelState === 'none') {
                     sortLevelBtn.classList.remove('primary-sort');
                     if (timeState !== 'none') {
                         sortTimeBtn.classList.add('primary-sort');
+                    } else if (scoreState !== 'none') {
+                        sortScoreBtn.classList.add('primary-sort');
                     }
                 } else if (timeIsPrimary && timeState === 'none') {
                     sortTimeBtn.classList.remove('primary-sort');
                     if (levelState !== 'none') {
                         sortLevelBtn.classList.add('primary-sort');
+                    } else if (scoreState !== 'none') {
+                        sortScoreBtn.classList.add('primary-sort');
+                    }
+                } else if (scoreIsPrimary && scoreState === 'none') {
+                    sortScoreBtn.classList.remove('primary-sort');
+                    if (levelState !== 'none') {
+                        sortLevelBtn.classList.add('primary-sort');
+                    } else if (timeState !== 'none') {
+                        sortTimeBtn.classList.add('primary-sort');
                     }
                 }
             }
@@ -361,7 +395,9 @@
             }
 
             btn.dataset.sortState = nextState;
-            btn.textContent = `${btn.id === 'oc-sort-level' ? '等级' : '完成时间'} ${nextState === 'asc' ? '⬆' : nextState === 'desc' ? '⬇' : ''}`.trim();
+            const btnText = btn.id === 'oc-sort-level' ? '等级' : 
+                           btn.id === 'oc-sort-time' ? '完成时间' : '工分';
+            btn.textContent = `${btnText} ${nextState === 'asc' ? '⬆' : nextState === 'desc' ? '⬇' : ''}`.trim();
 
             updateSortStates();
             applyFiltersAndSorting();
@@ -369,6 +405,7 @@
 
         sortLevelBtn.addEventListener('click', () => handleSortClick(sortLevelBtn));
         sortTimeBtn.addEventListener('click', () => handleSortClick(sortTimeBtn));
+        sortScoreBtn.addEventListener('click', () => handleSortClick(sortScoreBtn)); // 工分排序
 
         sortDefaultBtn.addEventListener('click', () => {
             if (sortDefaultBtn.dataset.sortState === 'active') return;
@@ -383,6 +420,10 @@
             sortTimeBtn.dataset.sortState = 'none';
             sortTimeBtn.classList.remove('primary-sort');
             sortTimeBtn.textContent = '完成时间';
+            
+            sortScoreBtn.dataset.sortState = 'none'; // 重置工分排序
+            sortScoreBtn.classList.remove('primary-sort');
+            sortScoreBtn.textContent = '工分';
 
             applyFiltersAndSorting();
         });
@@ -442,6 +483,7 @@
         const sortDefaultState = filterBar.querySelector('#oc-sort-default').dataset.sortState;
         const sortLevelState = filterBar.querySelector('#oc-sort-level').dataset.sortState;
         const sortTimeState = filterBar.querySelector('#oc-sort-time').dataset.sortState;
+        const sortScoreState = filterBar.querySelector('#oc-sort-score').dataset.sortState; // 工分排序状态
 
         let visibleCards = [];
 
@@ -475,14 +517,19 @@
                 return indexA - indexB;
             });
         } else {
-            const primarySortBtn = filterBar.querySelector('#oc-sort-level.primary-sort, #oc-sort-time.primary-sort');
-            const primarySort = primarySortBtn ? (primarySortBtn.id === 'oc-sort-level' ? 'level' : 'time') : 'none';
+            const primarySortBtn = filterBar.querySelector('#oc-sort-level.primary-sort, #oc-sort-time.primary-sort, #oc-sort-score.primary-sort');
+            const primarySort = primarySortBtn ? (
+                primarySortBtn.id === 'oc-sort-level' ? 'level' : 
+                primarySortBtn.id === 'oc-sort-time' ? 'time' : 'score'
+            ) : 'none';
 
             visibleCards.sort((a, b) => {
                 const levelA = parseInt(a.dataset.ocLevel || '0');
                 const levelB = parseInt(b.dataset.ocLevel || '0');
                 const timeA = parseInt(a.dataset.ocTime || Number.MAX_SAFE_INTEGER);
                 const timeB = parseInt(b.dataset.ocTime || Number.MAX_SAFE_INTEGER);
+                const scoreA = parseFloat(a.dataset.ocMaxScore || '-1');
+                const scoreB = parseFloat(b.dataset.ocMaxScore || '-1');
 
                 let primaryCompare = 0;
                 let secondaryCompare = 0;
@@ -493,13 +540,26 @@
                     }
                     if (sortTimeState !== 'none') {
                         secondaryCompare = (sortTimeState === 'asc' ? timeA - timeB : timeB - timeA);
+                    } else if (sortScoreState !== 'none') {
+                        secondaryCompare = (sortScoreState === 'asc' ? scoreA - scoreB : scoreB - scoreA);
                     }
-                } else {
+                } else if (primarySort === 'time') {
                     if (sortTimeState !== 'none') {
                         primaryCompare = (sortTimeState === 'asc' ? timeA - timeB : timeB - timeA);
                     }
                     if (sortLevelState !== 'none') {
                         secondaryCompare = (sortLevelState === 'asc' ? levelA - levelB : levelB - levelA);
+                    } else if (sortScoreState !== 'none') {
+                        secondaryCompare = (sortScoreState === 'asc' ? scoreA - scoreB : scoreB - scoreA);
+                    }
+                } else if (primarySort === 'score') {
+                    if (sortScoreState !== 'none') {
+                        primaryCompare = (sortScoreState === 'asc' ? scoreA - scoreB : scoreB - scoreA);
+                    }
+                    if (sortLevelState !== 'none') {
+                        secondaryCompare = (sortLevelState === 'asc' ? levelA - levelB : levelB - levelA);
+                    } else if (sortTimeState !== 'none') {
+                        secondaryCompare = (sortTimeState === 'asc' ? timeA - timeB : timeB - timeA);
                     }
                 }
                 return primaryCompare !== 0 ? primaryCompare : secondaryCompare;
@@ -598,6 +658,9 @@
 
         // 获取全局最高分
         const globalMaxScore = calculateGlobalMaxScore();
+        
+        // 计算当前卡片的最大工分（用于排序）
+        let cardMaxScore = -1;
 
         // 应用显示和颜色
         Array.from(notOpening.children).forEach((child) => {
@@ -623,6 +686,7 @@
             // 使用 daguofan 的系数表计算工分
             let displayValue = '?';
             let bgColor = '#d3d3d3'; // 默认浅灰色背景（问号用）
+            let totalProfit = -1;
             
             if (Number.isFinite(crimeLevel) && Number.isFinite(chance)) {
                 const matchResult = getXishuMatchResult(crimeName, crimeLevel, jobName, chance);
@@ -633,8 +697,11 @@
                     bgColor = '#ff6b6b'; // 红色背景
                 } else if (matchResult.reason === "ok" && Number.isFinite(matchResult.a)) {
                     // 正常情况，显示总工分（系数 × 空缺岗位数）
-                    const totalProfit = matchResult.a * vacantCount;
+                    totalProfit = matchResult.a * vacantCount;
                     displayValue = formatProfitValue(totalProfit);
+                    
+                    // 更新卡片最大分数
+                    cardMaxScore = Math.max(cardMaxScore, totalProfit);
                     
                     // 根据全局最高分设置颜色
                     if (globalMaxScore > 0 && totalProfit === globalMaxScore) {
@@ -659,28 +726,34 @@
 
             child.querySelectorAll('.oc-corner-index').forEach(n => n.remove());
 
-            const badge = document.createElement('div');
-            badge.className = 'oc-corner-index';
-            badge.textContent = displayValue;
+            // 根据开关决定是否显示工分
+            if (showScoreEnabled) {
+                const badge = document.createElement('div');
+                badge.className = 'oc-corner-index';
+                badge.textContent = displayValue;
 
-            Object.assign(badge.style, {
-                position: 'absolute',
-                right: '-6px',
-                bottom: '-6px',
-                zIndex: '5',
-                padding: '2px 6px',
-                lineHeight: '1',
-                fontSize: '12px',
-                fontWeight: '700',
-                color: '#000', // 黑色字体
-                background: bgColor,
-                borderRadius: '999px',
-                boxShadow: `0 0 0 2px ${bgColor}`, // 边框颜色与背景色一致
-                pointerEvents: 'none',
-                userSelect: 'none',
-            });
-            child.appendChild(badge);
+                Object.assign(badge.style, {
+                    position: 'absolute',
+                    right: '-6px',
+                    bottom: '-6px',
+                    zIndex: '5',
+                    padding: '2px 6px',
+                    lineHeight: '1',
+                    fontSize: '12px',
+                    fontWeight: '700',
+                    color: '#000', // 黑色字体
+                    background: bgColor,
+                    borderRadius: '999px',
+                    boxShadow: `0 0 0 2px ${bgColor}`, // 边框颜色与背景色一致
+                    pointerEvents: 'none',
+                    userSelect: 'none',
+                });
+                child.appendChild(badge);
+            }
         });
+        
+        // 保存卡片最大工分到 dataset（用于排序）
+        card.dataset.ocMaxScore = cardMaxScore > 0 ? String(cardMaxScore) : '-1';
     }
 
     // --- ensureOverlay (仅在 simplifyEnabled=true 时运行) ---
