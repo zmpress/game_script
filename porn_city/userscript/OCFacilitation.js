@@ -1002,6 +1002,26 @@
             });
 
             buttonDiv.appendChild(cancelBtn);
+
+            const resetBtn = document.createElement('button');
+            resetBtn.textContent = '恢复默认设置';
+            resetBtn.style.cssText = 'padding: 10px 20px; border: 1px solid #ff9800; border-radius: 4px; background: #fff3e0; color: #ff9800; cursor: pointer; font-size: 14px; min-width: 100px;';
+            resetBtn.addEventListener('mouseover', () => {
+                resetBtn.style.background = '#ffe0b2';
+                resetBtn.style.color = '#f57c00';
+            });
+            resetBtn.addEventListener('mouseout', () => {
+                resetBtn.style.background = '#fff3e0';
+                resetBtn.style.color = '#ff9800';
+            });
+            resetBtn.addEventListener('click', () => {
+                if (confirm('确定要恢复默认设置吗？所有自定义配置将被删除。')) {
+                    localStorage.removeItem('z_config');
+                    window.location.reload();
+                }
+            });
+            buttonDiv.appendChild(resetBtn);
+
             buttonDiv.appendChild(confirmBtn);
             panel.appendChild(buttonDiv);
 
