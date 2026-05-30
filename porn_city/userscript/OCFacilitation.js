@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         OC进度显示和Cooldowns(可设置，兼容PDA)
-// @version      1.1
+// @version      1.2
 // @description  显示 oc 进度，显示drug，medical，booster 的剩余时间，显示 refill 信息，均可设置是否显示
 // @author       zmpress [3633431]
 // @match        https://www.torn.com/*
@@ -598,11 +598,21 @@
         }
 
         renderApiKeyInput(container, errorMsg = "") {
+            const isMobile = Utils.isMobileDevice();
             const inputContainer = document.createElement('div');
-            inputContainer.style.display = 'flex';
-            inputContainer.style.alignItems = 'center';
-            inputContainer.style.gap = '5px';
-            inputContainer.style.padding = '0px'; // 紧凑：移除这里的纵向 padding
+            
+            // 电脑端使用垂直布局，手机端保持水平布局
+            if (isMobile) {
+                inputContainer.style.display = 'flex';
+                inputContainer.style.alignItems = 'center';
+                inputContainer.style.gap = '5px';
+            } else {
+                inputContainer.style.display = 'flex';
+                inputContainer.style.flexDirection = 'column';
+                inputContainer.style.gap = '8px';
+                inputContainer.style.alignItems = 'flex-start';
+            }
+            inputContainer.style.padding = '0px';
 
             const input = document.createElement('input');
             input.type = 'text';
@@ -614,9 +624,6 @@
             input.style.color = '#333';
             input.style.width = '180px';
             input.style.outline = 'none';
-
-            // 输入框提示灰字效果在 placeholder 中即可实现，如需改变 placeholder 颜色：
-            input.style.setProperty('::placeholder', 'color: #999');
 
             const btn = document.createElement('button');
             btn.textContent = '确认';
