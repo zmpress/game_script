@@ -14,9 +14,9 @@ https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/bi
 
 1-2.显示oc，drug，booster，medical剩余时间
 
-https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/TornOCCooldownCheck.js
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/OCFacilitation.js
 
-1-3.优化 Torn 派系犯罪卡片的显示效果，并增加多级排序、筛选和简化开关
+1-3.优化 Torn 派系犯罪卡片的显示效果，并增加多级排序、筛选和简化开关，增加大锅饭分数
 
 https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/OCSortAndDisplay.js
 
