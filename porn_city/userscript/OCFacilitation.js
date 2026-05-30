@@ -28,7 +28,7 @@
             REFILLS_DURATION: 30
         },
         COOLDOWN_SETTINGS: {
-            SHOW_ICONS: false,
+            SHOW_ICONS: true,
             SHOW_DRUG: true,
             SHOW_MEDICAL: true,
             SHOW_BOOSTER: true,
