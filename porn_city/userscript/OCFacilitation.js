@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         OC进度显示和Cooldowns(可设置，兼容PDA)
-// @version      1.3
+// @version      1.4
 // @description  显示 oc 进度，显示drug，medical，booster 的剩余时间，显示 refill 信息，均可设置是否显示
 // @author       zmpress [3633431]
 // @match        https://www.torn.com/*
@@ -503,7 +503,7 @@
                 const icon = this.createSlotIcon(slot, SegmentedIconInfo, userId);
                 // 为每个图标单独添加点击跳转事件
                 icon.addEventListener('click', () => {
-                    window.location.href = `https://www.torn.com/factions.php?step=your#/tab=crimes&crimeId=${userCrime.id}`;
+                    window.location.href = `https://www.torn.com/factions.php?step=your#/tab=crimes`;
                 });
                 fragment.appendChild(icon);
             });
