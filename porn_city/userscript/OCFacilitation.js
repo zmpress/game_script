@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         OC进度显示和Cooldowns(可改脚本开关控制显示)
+// @name         OC进度显示和Cooldowns(可设置)
 // @version      1.0
 // @description  显示 oc 进度，显示drug，medical，booster 的剩余时间，显示 refill 信息，均可设置是否显示
 // @author       zmpress [3633431]
