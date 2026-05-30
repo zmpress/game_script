@@ -1376,6 +1376,7 @@
             tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.2)';
             tooltip.style.transform = 'translateY(-5px)';
             tooltip.style.transition = 'all 0.2s ease';
+            tooltip.style.pointerEvents = 'none'; // 防止tooltip遮挡鼠标事件
 
             let tooltipContent = slot.user
                 ? `<div style="font-weight:500">${slot.user_id} 在这</div>`
