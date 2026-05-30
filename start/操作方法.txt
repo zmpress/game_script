@@ -1,0 +1,9 @@
+
+porn_city/porn_script.txt和porn_city/userscript全量覆盖到porn_city/cdn目录下
+
+porn_city/cdn目录下执行全量替换
+
+https://raw.githubusercontent.com/zmpress/game_script/refs/heads/main/porn_city/userscript/
+替换为
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/
+
