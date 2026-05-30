@@ -21,6 +21,30 @@
     console.log("🚀 OCFacilitation 启动");
 
     // =============== 配置管理 ===============
+    const DEFAULT_CONFIG = {
+        CACHE: {
+            OC_DATA_DURATION: 30,
+            COOLDOWN_DURATION: 30,
+            REFILLS_DURATION: 30
+        },
+        COOLDOWN_SETTINGS: {
+            SHOW_ICONS: false,
+            SHOW_DRUG: true,
+            SHOW_MEDICAL: true,
+            SHOW_BOOSTER: true,
+            WARNING_TIME: {
+                DRUG: 300,
+                MEDICAL: 300,
+                BOOSTER: 300
+            }
+        },
+        REFILLS_SETTINGS: {
+            SHOW_ENERGY: true,
+            SHOW_NERVE: true,
+            SHOW_TOKEN: true
+        }
+    };
+
     const CONFIG = {
         USER_ID: '',
         CACHE: {
@@ -483,6 +507,37 @@
 
     // =============== 状态图标管理类 ===============
     class StatusIconManager {
+        // 静态方法：从本地存储加载配置
+        static loadConfigFromLocalStorageStatic() {
+            try {
+                // 先重置为默认配置
+                Object.assign(CONFIG.CACHE, DEFAULT_CONFIG.CACHE);
+                Object.assign(CONFIG.COOLDOWN_SETTINGS, DEFAULT_CONFIG.COOLDOWN_SETTINGS);
+                CONFIG.COOLDOWN_SETTINGS.WARNING_TIME = JSON.parse(JSON.stringify(DEFAULT_CONFIG.COOLDOWN_SETTINGS.WARNING_TIME));
+                Object.assign(CONFIG.REFILLS_SETTINGS, DEFAULT_CONFIG.REFILLS_SETTINGS);
+                
+                // 再加载本地配置（如果有）
+                const savedConfig = localStorage.getItem('z_config');
+                if (savedConfig) {
+                    const config = JSON.parse(savedConfig);
+                    if (config.CACHE) {
+                        Object.assign(CONFIG.CACHE, config.CACHE);
+                    }
+                    if (config.COOLDOWN_SETTINGS) {
+                        Object.assign(CONFIG.COOLDOWN_SETTINGS, config.COOLDOWN_SETTINGS);
+                        if (config.COOLDOWN_SETTINGS.WARNING_TIME) {
+                            Object.assign(CONFIG.COOLDOWN_SETTINGS.WARNING_TIME, config.COOLDOWN_SETTINGS.WARNING_TIME);
+                        }
+                    }
+                    if (config.REFILLS_SETTINGS) {
+                        Object.assign(CONFIG.REFILLS_SETTINGS, config.REFILLS_SETTINGS);
+                    }
+                }
+            } catch (e) {
+                console.error('加载配置失败:', e);
+            }
+        }
+        
         async updateStatusIcons() {
             const ocStatusContainer = document.getElementById('oc-status-container');
             if (!ocStatusContainer) return;
@@ -740,29 +795,252 @@
                 unused.push(isMobile ? 't' : 'token');
             }
             
-            // 如果全部都用过了或都隐藏了，不显示
-            if (unused.length === 0) return;
+            // 如果还有未使用的补充，创建显示元素
+            if (unused.length > 0) {
+                const refillsDiv = document.createElement('div');
+                refillsDiv.style.display = 'flex';
+                refillsDiv.style.alignItems = 'center';
+                refillsDiv.style.gap = '3px';
+                refillsDiv.style.margin = '0';
+                refillsDiv.style.padding = '0';
+                refillsDiv.style.fontSize = '11px';
+                refillsDiv.style.color = '#666';
+                refillsDiv.style.cursor = 'pointer';
+                
+                const labelText = unused.join(',');
+                refillsDiv.innerHTML = `<span style="font-weight: 500; color: #000;">${labelText}</span>`;
+                
+                // 添加点击跳转事件
+                refillsDiv.addEventListener('click', () => {
+                    window.location.href = 'https://www.torn.com/page.php?sid=points';
+                });
+                
+                container.appendChild(refillsDiv);
+            }
             
-            // 创建显示元素
-            const refillsDiv = document.createElement('div');
-            refillsDiv.style.display = 'flex';
-            refillsDiv.style.alignItems = 'center';
-            refillsDiv.style.gap = '3px';
-            refillsDiv.style.margin = '0';
-            refillsDiv.style.padding = '0';
-            refillsDiv.style.fontSize = '11px';
-            refillsDiv.style.color = '#666';
-            refillsDiv.style.cursor = 'pointer';
+            // 无论是否有 refills 显示，都添加设置按钮
+            this.addSettingsButton(container);
+        }
+        
+        addSettingsButton(container) {
+            const settingsBtn = document.createElement('button');
+            settingsBtn.textContent = '⚙️';
+            settingsBtn.title = '打开设置';
+            settingsBtn.style.cssText = `
+                background: none;
+                border: none;
+                cursor: pointer;
+                font-size: 11px;
+                padding: 0;
+                margin-left: 5px;
+                opacity: 0.7;
+                transition: opacity 0.2s;
+                line-height: 1;
+            `;
+            settingsBtn.addEventListener('mouseover', () => settingsBtn.style.opacity = '1');
+            settingsBtn.addEventListener('mouseout', () => settingsBtn.style.opacity = '0.7');
+            settingsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.showSettingsPanel();
+            });
+            container.appendChild(settingsBtn);
+        }
+        
+        showSettingsPanel() {
+            const existingPanel = document.querySelector('.oc-settings-panel');
+            if (existingPanel) {
+                existingPanel.remove();
+                return;
+            }
             
-            const labelText = unused.join(',');
-            refillsDiv.innerHTML = `<span style="font-weight: 500; color: #000;">${labelText}</span>`;
+            // 每次打开设置时，从本地重新加载最新配置
+            StatusIconManager.loadConfigFromLocalStorageStatic();
             
-            // 添加点击跳转事件
-            refillsDiv.addEventListener('click', () => {
-                window.location.href = 'https://www.torn.com/page.php?sid=points';
+            const panel = document.createElement('div');
+            panel.className = 'oc-settings-panel';
+            const isMobile = Utils.isMobileDevice();
+            
+            panel.style.cssText = `
+                position: fixed;
+                top: ${isMobile ? '50%' : '100px'};
+                left: ${isMobile ? '50%' : '50%'};
+                transform: translate(-50%, ${isMobile ? '-50%' : '0'});
+                background: white;
+                border: 2px solid #ddd;
+                border-radius: 8px;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+                padding: 20px;
+                z-index: 10000;
+                min-width: ${isMobile ? '320px' : '450px'};
+                max-width: 90vw;
+                max-height: 80vh;
+                overflow-y: auto;
+            `;
+            
+            const title = document.createElement('h3');
+            title.textContent = '⚙️ OCFacilitation 设置';
+            title.style.cssText = `margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #eee; font-size: ${isMobile ? '16px' : '18px'}; color: #333;`;
+            panel.appendChild(title);
+            
+            // 缓存时间设置
+            panel.appendChild(this.createCacheSection());
+            
+            // 冷却显示设置
+            panel.appendChild(this.createCooldownSection());
+            
+            // Refills 显示设置
+            panel.appendChild(this.createRefillsSection());
+            
+            // 按钮区域
+            const buttonDiv = document.createElement('div');
+            buttonDiv.style.cssText = 'display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee;';
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = '取消';
+            cancelBtn.style.cssText = 'padding: 8px 20px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: pointer; font-size: 14px;';
+            cancelBtn.addEventListener('click', () => { panel.remove(); overlay.remove(); });
+            
+            const confirmBtn = document.createElement('button');
+            confirmBtn.textContent = '确定';
+            confirmBtn.style.cssText = 'padding: 8px 20px; border: none; border-radius: 4px; background: #4CAF50; color: white; cursor: pointer; font-size: 14px; font-weight: bold;';
+            confirmBtn.addEventListener('mouseover', () => confirmBtn.style.background = '#45a049');
+            confirmBtn.addEventListener('mouseout', () => confirmBtn.style.background = '#4CAF50');
+            confirmBtn.addEventListener('click', () => {
+                this.saveSettingsToLocalStorage();
+                panel.remove();
+                window.location.reload();
             });
             
-            container.appendChild(refillsDiv);
+            buttonDiv.appendChild(cancelBtn);
+            buttonDiv.appendChild(confirmBtn);
+            panel.appendChild(buttonDiv);
+            
+            const overlay = document.createElement('div');
+            overlay.style.cssText = 'position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;';
+            overlay.addEventListener('click', () => { panel.remove(); overlay.remove(); });
+            
+            document.body.appendChild(overlay);
+            document.body.appendChild(panel);
+        }
+        
+        createCacheSection() {
+            const section = document.createElement('div');
+            section.style.marginBottom = '20px';
+            
+            const title = document.createElement('h4');
+            title.textContent = '📦 缓存设置（秒）';
+            title.style.cssText = 'margin: 0 0 10px 0; font-size: 14px; color: #555;';
+            section.appendChild(title);
+            
+            section.appendChild(this.createNumberInput('OC 数据缓存', CONFIG.CACHE.OC_DATA_DURATION, (val) => { CONFIG.CACHE.OC_DATA_DURATION = parseInt(val) || 30; }));
+            section.appendChild(this.createNumberInput('冷却时间缓存', CONFIG.CACHE.COOLDOWN_DURATION, (val) => { CONFIG.CACHE.COOLDOWN_DURATION = parseInt(val) || 30; }));
+            section.appendChild(this.createNumberInput('Refills 缓存', CONFIG.CACHE.REFILLS_DURATION, (val) => { CONFIG.CACHE.REFILLS_DURATION = parseInt(val) || 30; }));
+            
+            return section;
+        }
+        
+        createCooldownSection() {
+            const section = document.createElement('div');
+            section.style.marginBottom = '20px';
+            
+            const title = document.createElement('h4');
+            title.textContent = '🎯 冷却时间显示';
+            title.style.cssText = 'margin: 0 0 10px 0; font-size: 14px; color: #555;';
+            section.appendChild(title);
+            
+            section.appendChild(this.createToggle('显示图标', CONFIG.COOLDOWN_SETTINGS.SHOW_ICONS, (v) => { CONFIG.COOLDOWN_SETTINGS.SHOW_ICONS = v; }));
+            section.appendChild(this.createToggle('显示药物', CONFIG.COOLDOWN_SETTINGS.SHOW_DRUG, (v) => { CONFIG.COOLDOWN_SETTINGS.SHOW_DRUG = v; }));
+            section.appendChild(this.createToggle('显示医疗', CONFIG.COOLDOWN_SETTINGS.SHOW_MEDICAL, (v) => { CONFIG.COOLDOWN_SETTINGS.SHOW_MEDICAL = v; }));
+            section.appendChild(this.createToggle('显示啤酒', CONFIG.COOLDOWN_SETTINGS.SHOW_BOOSTER, (v) => { CONFIG.COOLDOWN_SETTINGS.SHOW_BOOSTER = v; }));
+            
+            section.appendChild(this.createNumberInput('药物预警时间(秒)', CONFIG.COOLDOWN_SETTINGS.WARNING_TIME.DRUG, (val) => { CONFIG.COOLDOWN_SETTINGS.WARNING_TIME.DRUG = parseInt(val) || 300; }));
+            section.appendChild(this.createNumberInput('医疗预警时间(秒)', CONFIG.COOLDOWN_SETTINGS.WARNING_TIME.MEDICAL, (val) => { CONFIG.COOLDOWN_SETTINGS.WARNING_TIME.MEDICAL = parseInt(val) || 300; }));
+            section.appendChild(this.createNumberInput('啤酒预警时间(秒)', CONFIG.COOLDOWN_SETTINGS.WARNING_TIME.BOOSTER, (val) => { CONFIG.COOLDOWN_SETTINGS.WARNING_TIME.BOOSTER = parseInt(val) || 300; }));
+            
+            return section;
+        }
+        
+        createRefillsSection() {
+            const section = document.createElement('div');
+            section.style.marginBottom = '20px';
+            
+            const title = document.createElement('h4');
+            title.textContent = '⚡ Refills 显示';
+            title.style.cssText = 'margin: 0 0 10px 0; font-size: 14px; color: #555;';
+            section.appendChild(title);
+            
+            section.appendChild(this.createToggle('显示 Energy', CONFIG.REFILLS_SETTINGS.SHOW_ENERGY, (v) => { CONFIG.REFILLS_SETTINGS.SHOW_ENERGY = v; }));
+            section.appendChild(this.createToggle('显示 Nerve', CONFIG.REFILLS_SETTINGS.SHOW_NERVE, (v) => { CONFIG.REFILLS_SETTINGS.SHOW_NERVE = v; }));
+            section.appendChild(this.createToggle('显示 Token', CONFIG.REFILLS_SETTINGS.SHOW_TOKEN, (v) => { CONFIG.REFILLS_SETTINGS.SHOW_TOKEN = v; }));
+            
+            return section;
+        }
+        
+        createNumberInput(label, value, onChange) {
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0;';
+            
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = label;
+            labelSpan.style.fontSize = '13px';
+            labelSpan.style.color = '#333';
+            
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.value = value;
+            input.min = '1';
+            input.max = '300';
+            input.style.cssText = 'width: 80px; padding: 5px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 13px; text-align: center;';
+            input.addEventListener('change', (e) => onChange(e.target.value));
+            
+            div.appendChild(labelSpan);
+            div.appendChild(input);
+            return div;
+        }
+        
+        createToggle(label, checked, onChange) {
+            const div = document.createElement('div');
+            div.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; cursor: pointer;';
+            
+            const labelSpan = document.createElement('span');
+            labelSpan.textContent = label;
+            labelSpan.style.fontSize = '13px';
+            labelSpan.style.color = '#333';
+            
+            // 创建一个引用对象，用于在闭包中动态获取最新值
+            const stateRef = { value: checked };
+            
+            const toggleContainer = document.createElement('div');
+            toggleContainer.style.cssText = `position: relative; width: 50px; height: 26px; background: ${stateRef.value ? '#4CAF50' : '#ccc'}; border-radius: 13px; transition: background 0.3s;`;
+            
+            const toggleCircle = document.createElement('div');
+            toggleCircle.style.cssText = `position: absolute; top: 3px; left: ${stateRef.value ? '27px' : '3px'}; width: 20px; height: 20px; background: white; border-radius: 50%; transition: left 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);`;
+            
+            toggleContainer.appendChild(toggleCircle);
+            
+            div.addEventListener('click', () => {
+                stateRef.value = !stateRef.value;
+                onChange(stateRef.value);
+                toggleContainer.style.background = stateRef.value ? '#4CAF50' : '#ccc';
+                toggleCircle.style.left = stateRef.value ? '27px' : '3px';
+            });
+            
+            div.appendChild(labelSpan);
+            div.appendChild(toggleContainer);
+            return div;
+        }
+        
+        saveSettingsToLocalStorage() {
+            try {
+                const configToSave = {
+                    CACHE: CONFIG.CACHE,
+                    COOLDOWN_SETTINGS: CONFIG.COOLDOWN_SETTINGS,
+                    REFILLS_SETTINGS: CONFIG.REFILLS_SETTINGS
+                };
+                localStorage.setItem('z_config', JSON.stringify(configToSave));
+            } catch (e) {
+                console.error('保存配置失败:', e);
+            }
         }
         
         startCooldownTimer(container, initialCooldowns) {
@@ -1226,12 +1504,35 @@
 
         async initialize() {
             try {
+                // 加载保存的配置
+                this.loadConfigFromLocalStorage();
+                
                 this.statusIconManager = new StatusIconManager();
                 // 不再在此处强制等待 getPlayerId，交给 updateStatusIcons 处理
                 await this.setupStatusIcons();
                 this.setupPageChangeListeners();
             } catch (error) {
                 console.error('初始化失败:', error);
+            }
+        }
+        
+        loadConfigFromLocalStorage() {
+            try {
+                const savedConfig = localStorage.getItem('z_config');
+                if (savedConfig) {
+                    const config = JSON.parse(savedConfig);
+                    if (config.CACHE) {
+                        Object.assign(CONFIG.CACHE, config.CACHE);
+                    }
+                    if (config.COOLDOWN_SETTINGS) {
+                        Object.assign(CONFIG.COOLDOWN_SETTINGS, config.COOLDOWN_SETTINGS);
+                    }
+                    if (config.REFILLS_SETTINGS) {
+                        Object.assign(CONFIG.REFILLS_SETTINGS, config.REFILLS_SETTINGS);
+                    }
+                }
+            } catch (e) {
+                console.error('加载配置失败:', e);
             }
         }
 
