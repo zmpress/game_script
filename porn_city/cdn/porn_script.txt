@@ -1,0 +1,200 @@
+porn city ID：
+zmpress [3633431]
+
+========一 通用插件====================================
+
+0.torn tools
+github自行下载，也可从插件商店下载
+
+https://github.com/Mephiles/torntools_extension
+
+1.冰蛙宝鉴
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/bingwa.js
+
+1-2.显示oc，drug，booster，medical剩余时间
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/TornOCCooldownCheck.js
+
+1-3.优化 Torn 派系犯罪卡片的显示效果，并增加多级排序、筛选和简化开关
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/OCSortAndDisplay.js
+
+2.Torn 简中汉化脚本(优先选第二个，更推荐直接网页翻译)
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/torn_cn.js
+
+https://g8hh.com.cn/zh/tampermonkey/torn-chs.user.js
+
+3.iStock(股票详情)
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/iStock.js
+
+4.iTravel 飞花助手
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/iTravel.js
+
+5.普照助手
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/giveaway_helper.js
+
+5.飞花未装满提醒
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/Torn_Travel_Check.js
+
+7.移除开包动画
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/Remove_Package_Open_Animation.js
+
+8.赛车助手
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/saichezhushou.js
+
+9.777加速
+https://update.greasyfork.org/scripts/475467/Torn%20Fast%20Slots.user.js
+
+10.市场2.0改价插件
+
+https://update.greasyfork.org/scripts/513920/Torn%20Market%20Filler.user.js
+
+11.一键下架
+
+https://update.greasyfork.org/scripts/515870/Torn%20Market%20Quick%20Remove.user.js
+
+12.旧巴扎搜索插件
+旧
+https://update.greasyfork.org/scripts/515735/Bazaar%20Item%20Search%20powered%20by%20IronNerd.user.js
+新
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/Bazaar.js
+
+
+13.飞行屏蔽
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/FlightShielding.js
+
+14.log精确时间
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/log_time.js
+
+
+========二 OC插件====================================
+
+1.Torn Crimes奖励价值显示
+功能：crime成功后获得的物品显示市场价（需设置public api）（pda暂时无效）
+
+https://update.greasyfork.org/scripts/476788/Torn%20Crimes%20Rewards%20Value.user.js
+
+2.喷漆
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/penqi.js
+
+3.Crime分类
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/CrimeType.js
+
+4.OCFacilitation_1.0.5.2.user.js（OC2.0专用插件）
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/OCFacilitation.js
+
+5.toby自用crime助手
+
+https://update.greasyfork.org/scripts/515557/Crime%20Morale.user.js
+
+6.Cyclist Hunter-1.1（波波修复版）
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/CyclistHunter.js
+
+7.Torn Crimes Burglary Extended
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/TornCrimesBurglaryExtended.user
+
+8.crack_helper-1.2.4(密码破解提示，支持PDA)
+
+https://update.greasyfork.org/scripts/482828/torn-crime-crack-helper.user.js
+
+9.Disposal 辣鸡处理犯罪脚本
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/DisposalJ.A.R.V.I.S.js
+
+10.犯罪disposal去除错误的选择
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/disposal_remove_error.js
+
+11.torn_pickpocket_sorter-1.2(期望排序，80级以上弹窗提醒单车人)
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/TornPickpocketingSorter.js
+
+12.easy_crime_v1.2（快速犯罪）.user
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/EasyCrime.js
+
+13.shoplifting_watcher_0.3.3(偷店监控，性能优化，功能增强)
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/shoplifting-watcher.js
+
+14.Torn Crimes 20 - Disposal.user
+
+https://update.greasyfork.org/scripts/481640/Torn%20Crimes%2020%20-%20Disposal.user.js
+
+15.Cyclist Ring
+
+https://update.greasyfork.org/scripts/487359/Cyclist%20Ring.user.js
+
+16.Torn Pickpocketing Colors
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/TornPickpocketingColors.js
+
+17.OC2.0成功率显示插件
+
+https://update.greasyfork.org/scripts/526834/OC%20Success%20Chance%2020.user.js
+
+18.Torn Stats Faction CPR Tracker TS共享OC成功率
+
+https://update.greasyfork.org/scripts/538377/Torn%20Stats%20Faction%20CPR%20Tracker.user.js
+
+
+========三 RW相关====================================
+
+1.显示RW奖励价值
+功能：将RW结束后获得的奖励结算为市场价值
+
+https://update.greasyfork.org/scripts/473564/%E6%98%BE%E7%A4%BARW%E5%A5%96%E5%8A%B1%E4%BB%B7%E5%80%BC.user.js
+
+2.水木家族RW状态监控
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/shuimu_rw_monitor.js
+
+3.RW打地鼠
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/RW_dadishu.js
+
+4.Weapon & Armor UID-0.5.user （个人武器+ID）
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/WeaponArmor.js
+
+5.战报助手
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/AttackLogHelper.js
+
+6.一键杀人 GoCrazy
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/GoCrazy.js
+
+7.攻击助手_Easy_attack_v2.0
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/easyAttack.js
+
+========四 复活节====================================
+
+1.Heasley's Egg Navigator
+Heasley's Egg Navigator+ESC找蛋不屏蔽键盘版
+
+https://update.greasyfork.org/scripts/463484/Heasley%27s%20Egg%20Navigator.user.js
+
+2.Eggfinder
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/EggFinder.js
+
+3.Eggladder.js
+
+https://cdn.jsdelivr.net/gh/zmpress/game_script@main/porn_city/cdn/userscript/Eggladder.js
