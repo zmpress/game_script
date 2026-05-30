@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         托恩帮派犯罪简化显示 (带排序和筛选)
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  优化 Torn 派系犯罪卡片的显示效果，并增加多级排序、筛选和简化开关
 // @author       htys (zmpress修改版)
 // @match        https://www.torn.com/factions.php?step=your*
@@ -23,26 +23,148 @@
     const isShowOverlay = true;
     // --- 结束 ---
 
-    const INFLUENCE = {
-        "Pet Project": { "Kidnapper": 41.14, "Muscle": 26.83, "Picklock": 32.03 },
-        "Mob Mentality": { "Looter #1": 34.83, "Looter #2": 25.97, "Looter #3": 19.87, "Looter #4": 19.33 },
-        "Cash Me if You Can": { "Thief #1": 46.67, "Thief #2": 21.87, "Lookout": 31.46 },
-        "Best of the Lot": { "Picklock": 23.65, "Car Thief": 21.06, "Muscle": 36.43, "Imitator": 18.85 },
-        "Market Forces": { "Enforcer": 27.56, "Negotiator": 25.59, "Lookout": 19.05, "Arsonist": 4.12, "Muscle": 23.68 },
-        "Smoke and Wing Mirrors": { "Car Thief": 48.20, "Imitator": 26.30, "Hustler #1": 7.70, "Hustler #2": 17.81 },
-        "Gaslight the Way": { "Imitator #1": 7.54, "Imitator #2": 34.85, "Imitator #3": 40.25, "Looter #1": 7.54, "Looter #2": 0.00, "Looter #3": 9.83 },
-        "Stage Fright": { "Enforcer": 16.89, "Muscle #1": 21.92, "Muscle #2": 2.09, "Muscle #3": 9.49, "Lookout": 7.68, "Sniper": 41.92 },
-        "Snow Blind": { "Hustler": 51.40, "Imitator": 30.44, "Muscle #1": 9.08, "Muscle #2": 9.08 },
-        "Leave No Trace": { "Techie": 24.40, "Negotiator": 29.07, "Imitator": 46.54 },
-        "No Reserve": { "Car Thief": 30.86, "Techie": 37.88, "Engineer": 31.27 },
-        "Counter Offer": { "Robber": 33.29, "Looter": 4.69, "Hacker": 16.72, "Picklock": 17.10, "Engineer": 28.21 },
-        "Honey Trap": { "Enforcer": 20.21, "Muscle #1": 34.32, "Muscle #2": 45.47 },
-        "Bidding War": { "Robber #1": 6.82, "Driver": 21.93, "Robber #2": 19.63, "Robber #3": 25.65, "Bomber #1": 10.96, "Bomber #2": 15.00 },
-        "Blast from the Past": { "Picklock #1": 9.81, "Hacker": 6.18, "Engineer": 25.29, "Bomber": 20.40, "Muscle": 36.75, "Picklock #2": 1.56 },
-        "Break the Bank": { "Robber": 10.84, "Muscle #1": 10.27, "Muscle #2": 7.78, "Thief #1": 3.55, "Muscle #3": 33.54, "Thief #2": 34.03 },
-        "Stacking the Deck": { "Cat Burglar": 31.99, "Driver": 3.86, "Hacker": 25.64, "Imitator": 38.52 },
-        "Ace in the Hole": { "Imitator": 13.73, "Muscle #1": 18.55, "Muscle #2": 18.88, "Hacker": 37.49, "Driver": 11.35 }
-    };
+    // === daguofan 系数表集成 ===
+    const XISHU_REMOTE_URL = "https://tornweb.tysnode.uk/xishu.json";
+    const XISHU_CACHE_KEY = "dgf-xishu-cache-v1";
+    const XISHU_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24小时
+    let XISHU_TABLE = {};
+
+    function isValidXishuTable(obj) {
+        return obj && typeof obj === "object" && !Array.isArray(obj);
+    }
+
+    function loadXishuCache() {
+        try {
+            const raw = localStorage.getItem(XISHU_CACHE_KEY);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            const ts = Number(parsed?.ts || 0);
+            const data = parsed?.data;
+            if (!ts || !isValidXishuTable(data)) return null;
+            if (Date.now() - ts > XISHU_CACHE_TTL_MS) return null;
+            return data;
+        } catch (e) {
+            console.error("[OCSort] load xishu cache failed:", e);
+            return null;
+        }
+    }
+
+    function saveXishuCache(data) {
+        try {
+            localStorage.setItem(XISHU_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+        } catch (e) {
+            console.error("[OCSort] save xishu cache failed:", e);
+        }
+    }
+
+    async function fetchXishuTable() {
+        // 先加载缓存
+        const cached = loadXishuCache();
+        if (cached) XISHU_TABLE = cached;
+
+        // 再尝试远程获取
+        try {
+            const response = await fetch(XISHU_REMOTE_URL, { cache: 'no-cache' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if (!isValidXishuTable(data)) throw new Error("invalid xishu json shape");
+            XISHU_TABLE = data;
+            saveXishuCache(data);
+        } catch (e) {
+            console.warn("[OCSort] fetch xishu failed, using cache/fallback:", e);
+        }
+    }
+
+    function normalizeOcName(name) {
+        return String(name ?? "")
+            .replace(/\u00A0/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+    }
+
+    function normalizeRole(role) {
+        return String(role ?? "").replace(/\s+/g, "").trim();
+    }
+
+    function parseIntSafe(v) {
+        const m = String(v ?? "").match(/-?\d+/);
+        return m ? Number.parseInt(m[0], 10) : NaN;
+    }
+
+    function parseFloatSafe(v) {
+        const m = String(v ?? "").match(/-?\d+(?:\.\d+)?/);
+        return m ? Number.parseFloat(m[0]) : NaN;
+    }
+
+    function getXishuCoeff(ocName, level, role, chance) {
+        const nameKey = normalizeOcName(ocName);
+        const roleKey = normalizeRole(role);
+        const levelKey = String(level);
+
+        const byOc = XISHU_TABLE[nameKey];
+        if (!byOc) return null;
+        const byLevel = byOc[levelKey];
+        if (!byLevel) return null;
+        const ranges = byLevel[roleKey];
+        if (!Array.isArray(ranges) || ranges.length === 0) return null;
+
+        for (const r of ranges) {
+            if (!Array.isArray(r) || r.length < 3) continue;
+            const min = parseFloatSafe(r[0]);
+            const max = parseFloatSafe(r[1]);
+            const a = parseFloatSafe(r[2]);
+            if (!Number.isFinite(min) || !Number.isFinite(max) || !Number.isFinite(a)) continue;
+            if (chance >= min && chance <= max) return a;
+        }
+        return null;
+    }
+
+    function hasClassPrefix(el, prefix) {
+        if (!el || !el.classList) return false;
+        const p = `${prefix}___`;
+        for (const c of el.classList) {
+            if (c.startsWith(p)) return true;
+        }
+        return false;
+    }
+
+    function getXishuMatchResult(ocName, level, role, chance) {
+        const nameKey = normalizeOcName(ocName);
+        const roleKey = normalizeRole(role);
+        const levelKey = String(level);
+
+        const byOc = XISHU_TABLE[nameKey];
+        if (!byOc) return { a: null, reason: "missing_oc" };
+        const byLevel = byOc[levelKey];
+        if (!byLevel) return { a: null, reason: "missing_level" };
+        const ranges = byLevel[roleKey];
+        if (!Array.isArray(ranges) || ranges.length === 0) return { a: null, reason: "missing_role" };
+
+        let minAll = Infinity;
+        let maxAll = -Infinity;
+        for (const r of ranges) {
+            if (!Array.isArray(r) || r.length < 3) continue;
+            const min = parseFloatSafe(r[0]);
+            const max = parseFloatSafe(r[1]);
+            if (Number.isFinite(min)) minAll = Math.min(minAll, min);
+            if (Number.isFinite(max)) maxAll = Math.max(maxAll, max);
+        }
+
+        const a = getXishuCoeff(nameKey, levelKey, roleKey, chance);
+        if (Number.isFinite(a)) return { a, reason: "ok" };
+
+        if (Number.isFinite(minAll) && chance < minAll) return { a: null, reason: "chance_too_low", minAll, maxAll };
+        if (Number.isFinite(maxAll) && chance > maxAll) return { a: null, reason: "chance_too_high", minAll, maxAll };
+        return { a: null, reason: "no_match", minAll, maxAll };
+    }
+
+    function formatProfitValue(value) {
+        const s = Number(value).toFixed(3);
+        return s.replace(/\.?0+$/, "");
+    }
+
+    // 初始化加载系数表
+    fetchXishuTable();
 
     // --- 注入CSS样式 ---
     function injectStyles() {
@@ -390,38 +512,65 @@
         countEl.textContent = `(${visibleCards.length}/${allCards.length})`;
     }
 
+    // --- 全局计算最高分（用于颜色分级）---
+    function calculateGlobalMaxScore() {
+        const allCards = document.querySelectorAll('[data-oc-id]');
+        let globalMaxScore = 0;
+        
+        allCards.forEach(card => {
+            const notOpening = card.querySelector('[class*="notOpening___"]');
+            if (!notOpening) return;
+            
+            const titleEl = card.querySelector('[class*="panelTitle___"]');
+            const crimeName = titleEl ? titleEl.textContent.trim() : 'Unknown';
+            const levelVal = card.querySelector('span[class^="levelValue"]');
+            const crimeLevel = levelVal ? parseIntSafe(levelVal.textContent) : NaN;
+            
+            if (!Number.isFinite(crimeLevel)) return;
+            
+            // 统计空缺岗位数量
+            const allSlots = Array.from(notOpening.children);
+            let vacantCount = 0;
+            allSlots.forEach(child => {
+                const isVacant = child.querySelector('[class*="joinButton___"]') || 
+                               child.querySelector('[class*="joinContainer___"]') ||
+                               hasClassPrefix(child, "waitingJoin");
+                if (isVacant) vacantCount++;
+            });
+            
+            if (vacantCount <= 0) return;
+            
+            // 计算每个空缺岗位的分数
+            Array.from(notOpening.children).forEach((child) => {
+                const isVacant = child.querySelector('[class*="joinButton___"]') || 
+                               child.querySelector('[class*="joinContainer___"]') ||
+                               hasClassPrefix(child, "waitingJoin");
+                
+                if (!isVacant) return;
+                
+                const jobNameEl = child.querySelector('[class*="title___"]');
+                const jobName = jobNameEl ? jobNameEl.textContent.trim() : 'Unknown';
+                const chanceEl = child.querySelector('[class*="successChance___"]');
+                const chance = chanceEl ? parseIntSafe(chanceEl.textContent) : NaN;
+                
+                if (Number.isFinite(chance)) {
+                    const matchResult = getXishuMatchResult(crimeName, crimeLevel, jobName, chance);
+                    if (matchResult.reason === "ok" && Number.isFinite(matchResult.a)) {
+                        const totalProfit = matchResult.a * vacantCount;
+                        globalMaxScore = Math.max(globalMaxScore, totalProfit);
+                    }
+                }
+            });
+        });
+        
+        return globalMaxScore;
+    }
+
     function parseTornTimeToSeconds(text) {
         const parts = text.split(':').map(Number);
         if (parts.length !== 4) return Number.MAX_SAFE_INTEGER;
         const [dd, hh, mm, ss] = parts;
         return dd * 86400 + hh * 3600 + mm * 60 + ss;
-    }
-
-    function findMatchingCrimeName(inputName) {
-        const possibleMatches = Object.keys(INFLUENCE).filter(key =>
-            inputName.includes(key)
-        );
-        if (possibleMatches.length === 0) {
-            console.error(`No matching crime found for "${inputName}"`);
-            return null;
-        }
-        return possibleMatches.reduce((a, b) => a.length > b.length ? a : b);
-    }
-
-    function getInfluence(crimeName, jobName) {
-        const matchedCrime = findMatchingCrimeName(crimeName);
-        if (!matchedCrime) {
-            return null;
-        }
-        if (!INFLUENCE[matchedCrime]) {
-            console.error(`Crime "${matchedCrime}" not found`);
-            return null;
-        }
-        if (INFLUENCE[matchedCrime][jobName] === undefined) {
-            console.error(`Job "${jobName}" not found in crime "${matchedCrime}"`);
-            return null;
-        }
-        return INFLUENCE[matchedCrime][jobName];
     }
 
     function applyCornerNumbers(card) {
@@ -431,23 +580,88 @@
         const titleEl = card.querySelector('[class*="panelTitle___"]');
         const crimeName = titleEl ? titleEl.textContent.trim() : 'Unknown';
 
+        // 获取 OC 等级
+        const levelVal = card.querySelector('span[class^="levelValue"]');
+        const crimeLevel = levelVal ? parseIntSafe(levelVal.textContent) : NaN;
+
+        // 统计空缺岗位数量
+        const allSlots = Array.from(notOpening.children);
+        let vacantCount = 0;
+        allSlots.forEach(child => {
+            const isVacant = child.querySelector('[class*="joinButton___"]') || 
+                           child.querySelector('[class*="joinContainer___"]') ||
+                           hasClassPrefix(child, "waitingJoin");
+            if (isVacant) vacantCount++;
+        });
+
         notOpening.style.overflow = 'visible';
 
-        Array.from(notOpening.children).forEach((child, idx) => {
+        // 获取全局最高分
+        const globalMaxScore = calculateGlobalMaxScore();
+
+        // 应用显示和颜色
+        Array.from(notOpening.children).forEach((child) => {
+            const isVacant = child.querySelector('[class*="joinButton___"]') || 
+                           child.querySelector('[class*="joinContainer___"]') ||
+                           hasClassPrefix(child, "waitingJoin");
+            
+            // 如果不是空缺岗位，则不显示任何东西
+            if (!isVacant) {
+                child.querySelectorAll('.oc-corner-index').forEach(n => n.remove());
+                return;
+            }
+
             const cs = getComputedStyle(child);
             if (cs.position === 'static') child.style.position = 'relative';
             child.style.overflow = 'visible';
 
             const jobNameEl = child.querySelector('[class*="title___"]');
             const jobName = jobNameEl ? jobNameEl.textContent.trim() : 'Unknown';
+            const chanceEl = child.querySelector('[class*="successChance___"]');
+            const chance = chanceEl ? parseIntSafe(chanceEl.textContent) : NaN;
 
-            const jobInfluence = Math.round(getInfluence(crimeName, jobName));
+            // 使用 daguofan 的系数表计算工分
+            let displayValue = '?';
+            let bgColor = '#d3d3d3'; // 默认浅灰色背景（问号用）
+            
+            if (Number.isFinite(crimeLevel) && Number.isFinite(chance)) {
+                const matchResult = getXishuMatchResult(crimeName, crimeLevel, jobName, chance);
+                
+                if (matchResult.reason === "chance_too_low") {
+                    // 成功率太低，显示红色 0
+                    displayValue = '0';
+                    bgColor = '#ff6b6b'; // 红色背景
+                } else if (matchResult.reason === "ok" && Number.isFinite(matchResult.a)) {
+                    // 正常情况，显示总工分（系数 × 空缺岗位数）
+                    const totalProfit = matchResult.a * vacantCount;
+                    displayValue = formatProfitValue(totalProfit);
+                    
+                    // 根据全局最高分设置颜色
+                    if (globalMaxScore > 0 && totalProfit === globalMaxScore) {
+                        // 最高分：绿色
+                        bgColor = '#51cf66';
+                    } else if (globalMaxScore > 0 && totalProfit >= globalMaxScore * 0.8) {
+                        // 较高分（>=80%最高分）：黄色
+                        bgColor = '#ffe066';
+                    } else if (globalMaxScore > 0 && totalProfit >= globalMaxScore * 0.6) {
+                        // 中等分数（>=60%最高分）：橙色
+                        bgColor = '#ffd43b';
+                    } else {
+                        // 普通分数：浅灰色
+                        bgColor = '#c0c0c0';
+                    }
+                } else {
+                    // 其他情况（未命中系数表等），保持问号，使用更浅的灰色
+                    displayValue = '?';
+                    bgColor = '#e0e0e0'; // 更浅的灰色背景
+                }
+            }
 
             child.querySelectorAll('.oc-corner-index').forEach(n => n.remove());
 
             const badge = document.createElement('div');
             badge.className = 'oc-corner-index';
-            badge.textContent = jobInfluence.toString();
+            badge.textContent = displayValue;
 
             Object.assign(badge.style, {
                 position: 'absolute',
@@ -458,10 +672,10 @@
                 lineHeight: '1',
                 fontSize: '12px',
                 fontWeight: '700',
-                color: '#fff',
-                background: 'rgba(0,0,0,0.75)',
+                color: '#000', // 黑色字体
+                background: bgColor,
                 borderRadius: '999px',
-                boxShadow: '0 0 0 2px rgba(0,0,0,0.35)',
+                boxShadow: `0 0 0 2px ${bgColor}`, // 边框颜色与背景色一致
                 pointerEvents: 'none',
                 userSelect: 'none',
             });
@@ -655,18 +869,22 @@
                 c.dataset.ocOriginalIndex = index;
             }
 
-            // --- 仅在 "简化" 模式下运行视觉修改 ---
             if (simplifyEnabled) {
+                // 简化显示模式：先创建 overlay，再更新数据，再加工分
                 if (isShowInfluence === true) {
                     applyCornerNumbers(c);
                 }
                 if (isShowOverlay === true) {
                     ensureOverlay(c);
                 }
+                updateCardInfo(c);
+            } else {
+                // 原始显示模式：更新数据 + 显示工分
+                updateCardInfo(c);
+                if (isShowInfluence === true) {
+                    applyCornerNumbers(c);
+                }
             }
-
-            // --- 始终运行数据绑定和(可选的)UI更新 ---
-            updateCardInfo(c);
         });
     }
 
