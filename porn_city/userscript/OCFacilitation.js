@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         OC进度显示和Cooldowns(可设置，兼容PDA)
-// @version      1.0
+// @version      1.1
 // @description  显示 oc 进度，显示drug，medical，booster 的剩余时间，显示 refill 信息，均可设置是否显示
 // @author       zmpress [3633431]
 // @match        https://www.torn.com/*
@@ -1015,8 +1015,19 @@
                 resetBtn.style.color = '#ff9800';
             });
             resetBtn.addEventListener('click', () => {
-                if (confirm('确定要恢复默认设置吗？所有自定义配置将被删除。')) {
+                if (confirm('确定要恢复默认设置吗？\n\n将删除以下内容：\n- 所有自定义配置\n- API Key\n- 所有接口缓存数据\n\n此操作不可恢复！')) {
+                    // 删除配置
                     localStorage.removeItem('z_config');
+                    // 删除 API Key
+                    localStorage.removeItem('z_tornMinimalKey');
+                    // 删除所有接口缓存
+                    localStorage.removeItem('z_api2_userOrganizedcrime');
+                    localStorage.removeItem('z_api2_userCooldowns');
+                    localStorage.removeItem('z_api2_userRefills');
+                    // 删除玩家 ID
+                    localStorage.removeItem('PlayerId');
+                    
+                    console.log('✅ 已清除所有脚本数据和缓存');
                     window.location.reload();
                 }
             });
