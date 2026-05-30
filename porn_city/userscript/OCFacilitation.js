@@ -869,45 +869,66 @@
                 border: 2px solid #ddd;
                 border-radius: 8px;
                 box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-                padding: 20px;
+                padding: 0;
                 z-index: 10000;
                 min-width: ${isMobile ? '320px' : '450px'};
                 max-width: 90vw;
                 max-height: 80vh;
-                overflow-y: auto;
+                display: flex;
+                flex-direction: column;
             `;
             
             const title = document.createElement('h3');
             title.textContent = '⚙️ OCFacilitation 设置';
-            title.style.cssText = `margin: 0 0 15px 0; padding-bottom: 10px; border-bottom: 2px solid #eee; font-size: ${isMobile ? '16px' : '18px'}; color: #333;`;
+            title.style.cssText = `margin: 0; padding: 20px 20px 15px 20px; border-bottom: 2px solid #eee; font-size: ${isMobile ? '16px' : '18px'}; color: #333;`;
             panel.appendChild(title);
             
+            // 内容区域 - 可滚动
+            const contentDiv = document.createElement('div');
+            contentDiv.style.cssText = `
+                flex: 1;
+                overflow-y: auto;
+                padding: 20px;
+            `;
+            
             // 缓存时间设置
-            panel.appendChild(this.createCacheSection());
+            contentDiv.appendChild(this.createCacheSection());
             
             // 冷却显示设置
-            panel.appendChild(this.createCooldownSection());
+            contentDiv.appendChild(this.createCooldownSection());
             
             // Refills 显示设置
-            panel.appendChild(this.createRefillsSection());
+            contentDiv.appendChild(this.createRefillsSection());
             
-            // 按钮区域
+            panel.appendChild(contentDiv);
+            
+            // 按钮区域 - 固定在面板底部
             const buttonDiv = document.createElement('div');
-            buttonDiv.style.cssText = 'display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; padding-top: 15px; border-top: 2px solid #eee;';
+            buttonDiv.style.cssText = `
+                display: flex;
+                flex-direction: row;
+                gap: 10px;
+                justify-content: center;
+                padding: 15px 20px;
+                border-top: 2px solid #eee;
+                background: white;
+                flex-shrink: 0;
+            `;
             
             const cancelBtn = document.createElement('button');
             cancelBtn.textContent = '取消';
-            cancelBtn.style.cssText = 'padding: 8px 20px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: pointer; font-size: 14px;';
+            cancelBtn.style.cssText = 'padding: 10px 20px; border: 1px solid #ddd; border-radius: 4px; background: #f5f5f5; cursor: pointer; font-size: 14px; min-width: 80px;';
             cancelBtn.addEventListener('click', () => { panel.remove(); overlay.remove(); });
             
             const confirmBtn = document.createElement('button');
             confirmBtn.textContent = '确定';
-            confirmBtn.style.cssText = 'padding: 8px 20px; border: none; border-radius: 4px; background: #4CAF50; color: white; cursor: pointer; font-size: 14px; font-weight: bold;';
+            confirmBtn.style.cssText = 'padding: 10px 20px; border: none; border-radius: 4px; background: #4CAF50; color: white; cursor: pointer; font-size: 14px; font-weight: bold; min-width: 80px;';
             confirmBtn.addEventListener('mouseover', () => confirmBtn.style.background = '#45a049');
             confirmBtn.addEventListener('mouseout', () => confirmBtn.style.background = '#4CAF50');
             confirmBtn.addEventListener('click', () => {
                 this.saveSettingsToLocalStorage();
                 panel.remove();
+                overlay.remove();
                 window.location.reload();
             });
             
